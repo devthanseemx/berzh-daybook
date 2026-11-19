@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Toaster } from 'sonner';
+import { CalendarDays, LayoutDashboard, Upload } from 'lucide-react';
 import useAuth from './hooks/useAuth';
 import useCollection from './hooks/useCollection';
 import { supabase, cloudEnabled } from './lib/supabase';
@@ -109,13 +110,25 @@ function Main({ user }) {
   return (
     <div className="app">
       <header className="topbar">
-        <h1>Daybook</h1>
+        <div className="brand-lockup">
+          <img src="/daybook-mark.svg" alt="" />
+          <div>
+            <strong>Daybook</strong>
+            <span>PLAN YOUR DAYS WITH INTENTION</span>
+          </div>
+        </div>
         <div className="top-actions">
           <nav>
-            <button className={view === 'dashboard' ? 'active' : ''} onClick={() => setView('dashboard')}>Dashboard</button>
-            <button className={view === 'calendar' ? 'active' : ''} onClick={() => setView('calendar')}>Calendar</button>
+            <button className={view === 'dashboard' ? 'active' : ''} onClick={() => setView('dashboard')}>
+              <LayoutDashboard size={16} /> Dashboard
+            </button>
+            <button className={view === 'calendar' ? 'active' : ''} onClick={() => setView('calendar')}>
+              <CalendarDays size={16} /> Calendar
+            </button>
           </nav>
-          <button onClick={() => setShowIO(true)}>Import / Export</button>
+          <button className="import-button" onClick={() => setShowIO(true)}>
+            <Upload size={16} /> <span>Import / Export</span>
+          </button>
           {user && <ProfileMenu user={user} onSignOut={signOut} />}
         </div>
       </header>

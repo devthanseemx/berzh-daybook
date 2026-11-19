@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
+import { BriefcaseBusiness, CalendarDays, CheckCircle2 } from 'lucide-react';
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import { toKey, todayKey } from '../utils/dates';
 
-const COLOR = { done: '#10b981', pending: '#6366f1', missed: '#ef4444', cat: '#8b5cf6' };
+const COLOR = { done: '#10b981', pending: '#5145e5', missed: '#ef4444', cat: '#5145e5' };
 const tip = {
   contentStyle: { background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8 },
   labelStyle: { color: 'var(--text)' },
@@ -55,8 +56,11 @@ export default function Charts({ events, tasks }) {
 
   return (
     <section className="charts">
-      <div className="card">
-        <h3>Task status</h3>
+      <div className="card dashboard-card chart-card">
+        <div className="chart-heading">
+          <div className="dashboard-section-icon green"><CheckCircle2 size={17} /></div>
+          <div><h3>Task status</h3><p>How your tasks are going</p></div>
+        </div>
         {tasks.length === 0 ? (
           <p className="muted">Add some tasks to see this chart.</p>
         ) : (
@@ -75,8 +79,11 @@ export default function Charts({ events, tasks }) {
         )}
       </div>
 
-      <div className="card">
-        <h3>Tasks per day · last 7 and next 7 days</h3>
+      <div className="card dashboard-card chart-card">
+        <div className="chart-heading">
+          <div className="dashboard-section-icon blue"><CalendarDays size={17} /></div>
+          <div><h3>Tasks per day</h3><p>Last 7 and next 7 days</p></div>
+        </div>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={days}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -90,8 +97,11 @@ export default function Charts({ events, tasks }) {
         </ResponsiveContainer>
       </div>
 
-      <div className="card full">
-        <h3>Events by category</h3>
+      <div className="card full dashboard-card chart-card">
+        <div className="chart-heading">
+          <div className="dashboard-section-icon violet"><BriefcaseBusiness size={17} /></div>
+          <div><h3>Events by category</h3><p>Where your time and focus are going</p></div>
+        </div>
         {categories.length === 0 ? (
           <p className="muted">Add some events to see this chart.</p>
         ) : (

@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import {
+  BriefcaseBusiness, CalendarDays, CheckCircle2, ChevronDown, ChevronRight,
+  CircleAlert, Clock3, ListTodo, Trash2, TrendingUp,
+} from 'lucide-react';
 import { todayKey, shortDate, prettyDate, fmt12 } from '../utils/dates';
 import FilterBar from './FilterBar';
 import Charts from './Charts';
@@ -20,16 +24,16 @@ function MoreButtons({ limit, total, setLimit }) {
 
 function EventRow({ ev, onOpenDay, onDelete }) {
   return (
-    <li className="row nopointer">
+    <li className="row event-row nopointer">
       <span className="row-date link-ish" onClick={() => onOpenDay(ev.date)}>{shortDate(ev.date)}</span>
       <span className="row-title link-ish" onClick={() => onOpenDay(ev.date)}>{ev.title}</span>
       <span className="tag">{ev.category}</span>
       <button
-        className="icon"
+        className="icon row-action"
         aria-label="Delete event"
         onClick={() => window.confirm('Delete this event?') && onDelete(ev.id)}
       >
-        🗑
+        <Trash2 size={16} />
       </button>
     </li>
   );
@@ -45,21 +49,22 @@ function TaskLine({ t, saveTask, deleteTask, onOpenDay, showDate }) {
     <li className="task">
       <div className={`row nopointer ${t.done ? 'done' : ''}`}>
         <input type="checkbox" checked={t.done} onChange={() => saveTask({ ...t, done: !t.done })} />
-        <span className="row-date link-ish" onClick={() => onOpenDay(t.date)}>
+        <span className="row-date task-time link-ish" onClick={() => onOpenDay(t.date)}>
           {showDate ? `${shortDate(t.date)} · ` : ''}{fmt12(t.start)} – {fmt12(t.end)}
         </span>
         <span className="row-title link-ish" onClick={() => onOpenDay(t.date)}>{t.title}</span>
         {subs.length > 0 && (
-          <button className="icon" title="Show or hide subtasks" onClick={() => setOpen(!open)}>
-            {open ? '▾' : '▸'} {subs.filter((s) => s.done).length}/{subs.length}
+          <button className="subtask-count" title="Show or hide subtasks" onClick={() => setOpen(!open)}>
+            {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {subs.filter((s) => s.done).length}/{subs.length}
           </button>
         )}
         <button
-          className="icon"
+          className="icon row-action"
           aria-label="Delete task"
           onClick={() => window.confirm('Delete this task?') && deleteTask(t.id)}
         >
-          🗑
+          <Trash2 size={16} />
         </button>
       </div>
 
@@ -114,28 +119,49 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
 
   const todayTasks = tasks.filter((t) => t.date === today);
   const lineProps = { saveTask, deleteTask, onOpenDay };
+  const completedToday = todayTasks.filter((t) => t.done).length;
+  const metrics = [
+    { label: 'Total events', value: events.length, note: 'Saved in your daybook', icon: CalendarDays, tone: 'violet' },
+    { label: 'Upcoming events', value: upcomingAll.length, note: 'Still ahead of you', icon: TrendingUp, tone: 'blue' },
+    { label: 'Past events', value: recentAll.length, note: 'Captured along the way', icon: BriefcaseBusiness, tone: 'amber' },
+    { label: "Today's tasks", value: `${completedToday}/${todayTasks.length}`, note: 'Marked complete today', icon: CheckCircle2, tone: 'green' },
+  ];
 
   return (
     <div className="dashboard">
-      <h2 className="hello">{hello}{name ? `, ${name}` : ''} 👋</h2>
+      <div className="dashboard-intro">
+        <div>
+          <p className="dashboard-kicker">YOUR OVERVIEW</p>
+          <h2 className="hello">{hello}{name ? `, ${name}` : ''}</h2>
+          <p className="dashboard-subtitle">A clear view of what’s happening and what’s next.</p>
+        </div>
+        <div className="today-pill"><CalendarDays size={16} />{shortDate(today)}</div>
+      </div>
 
       <section className="stats">
-        <div className="stat"><b>{events.length}</b><span>Total events</span></div>
-        <div className="stat"><b>{upcomingAll.length}</b><span>Upcoming events</span></div>
-        <div className="stat"><b>{recentAll.length}</b><span>Happened</span></div>
-        <div className="stat">
-          <b>{todayTasks.filter((t) => t.done).length}/{todayTasks.length}</b>
-          <span>Today's tasks done</span>
-        </div>
+        {metrics.map(({ label, value, note, icon: Icon, tone }) => (
+          <div className="stat" key={label}>
+            <div className={`stat-icon ${tone}`}><Icon size={18} strokeWidth={2} /></div>
+            <div className="stat-copy">
+              <span>{label}</span>
+              <b>{value}</b>
+              <small>{note}</small>
+            </div>
+          </div>
+        ))}
       </section>
 
       <Charts events={events} tasks={tasks} />
 
       <div className="grid-2">
-        <section className="card">
-          <h2>Upcoming events</h2>
+        <section className="card dashboard-card">
+          <div className="dashboard-card-head">
+            <div className="dashboard-section-icon violet"><CalendarDays size={17} /></div>
+            <div><h2>Upcoming events</h2><p>What’s next on your calendar</p></div>
+            <span className="count-chip">{upcomingAll.length}</span>
+          </div>
           {upcomingAll.length === 0 ? (
-            <p className="muted">Nothing coming up. Add one from the Calendar.</p>
+            <div className="dashboard-empty"><CalendarDays size={19} /><p>Nothing coming up. Add an event from your calendar.</p></div>
           ) : (
             <>
               <ul className="list">
@@ -148,10 +174,14 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
           )}
         </section>
 
-        <section className="card">
-          <h2>Recent events</h2>
+        <section className="card dashboard-card">
+          <div className="dashboard-card-head">
+            <div className="dashboard-section-icon amber"><BriefcaseBusiness size={17} /></div>
+            <div><h2>Recent events</h2><p>Moments you’ve logged</p></div>
+            <span className="count-chip">{recentAll.length}</span>
+          </div>
           {recentAll.length === 0 ? (
-            <p className="muted">No past events logged yet.</p>
+            <div className="dashboard-empty"><BriefcaseBusiness size={19} /><p>No past events logged yet.</p></div>
           ) : (
             <>
               <ul className="list">
@@ -165,9 +195,13 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
         </section>
       </div>
 
-      <section className="card">
-        <div className="section-head">
-          <h2>Schedule</h2>
+      <section className="card dashboard-card schedule-card">
+        <div className="section-head dashboard-card-head">
+          <div className="dashboard-section-icon blue"><ListTodo size={18} /></div>
+          <div className="dashboard-section-copy">
+            <h2>Schedule</h2>
+            <p>Your time blocks, all in one place</p>
+          </div>
           <FilterBar
             range={range} setRange={setRange}
             status={status} setStatus={setStatus}
@@ -176,7 +210,7 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
         </div>
 
         {days.length === 0 ? (
-          <p className="muted">No time blocks match this filter.</p>
+          <div className="dashboard-empty"><Clock3 size={19} /><p>No time blocks match this filter.</p></div>
         ) : (
           days.map((d) => (
             <div key={d} className="day-group">
@@ -191,8 +225,12 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
       </section>
 
       {missed.length > 0 && (
-        <section className="card">
-          <h2>Missed tasks</h2>
+        <section className="card dashboard-card missed-card">
+          <div className="dashboard-card-head">
+            <div className="dashboard-section-icon red"><CircleAlert size={17} /></div>
+            <div><h2>Missed tasks</h2><p>Past tasks not marked complete</p></div>
+            <span className="count-chip">{missed.length}</span>
+          </div>
           <p className="muted">Past tasks not ticked as done. Tick them if you finished them.</p>
           <ul className="list">
             {missed.map((t) => <TaskLine key={t.id} t={t} showDate {...lineProps} />)}
