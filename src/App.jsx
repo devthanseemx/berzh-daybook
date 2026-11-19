@@ -166,7 +166,7 @@ export default function App() {
 
   let body;
   if (!ready) body = <div className="app"><p className="muted">Loading…</p></div>;
-  else if (cloudEnabled && !user) body = <div className="app"><Login /></div>;
+  else if (cloudEnabled && !user) body = <div className="auth-shell"><Login /></div>;
   else body = <Main key={user?.id ?? 'local'} user={user} />;
 
   return (

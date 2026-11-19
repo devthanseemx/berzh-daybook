@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ArrowRight, CalendarDays, Check, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { notify } from '../lib/notify';
 
@@ -19,6 +20,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const googleLogin = async () => {
     setMsg('');
@@ -47,27 +49,131 @@ else if (mode === 'signup') notify.success('Account created. If email confirmati
   };
 
   return (
-    <div className="card login">
-      <h2>Daybook</h2>
-      <p className="muted">Sign in or create an account</p>
+    <main className="auth-page">
+      <header className="auth-brand">
+        <img src="/daybook-mark.svg" alt="" />
+        <span>daybook</span>
+      </header>
 
-      <button className="google-btn" onClick={googleLogin}>
-        <GoogleIcon /> Continue with Google
-      </button>
+      <div className="auth-content">
+        <section className="auth-story" aria-label="About Daybook">
+          <span className="auth-eyebrow"><span className="eyebrow-dot" /> YOUR DAYS, WITH INTENTION</span>
+          <h1>A little more focus.<br /><span>A lot more you.</span></h1>
+          <p className="auth-description">
+            Bring your plans, priorities, and progress together in one calm place.
+            Make space for what matters today.
+          </p>
 
-      <div className="divider"><span>or use email</span></div>
+          <div className="preview-card" aria-hidden="true">
+            <div className="preview-head">
+              <div>
+                <span className="preview-caption">YOUR DAYBOOK</span>
+                <strong>This week</strong>
+              </div>
+              <span className="preview-date">NOV 16 — 22</span>
+            </div>
+            <div className="preview-days">
+              {[
+                ['M', '16', false],
+                ['T', '17', false],
+                ['W', '18', true],
+                ['T', '19', false],
+                ['F', '20', false],
+              ].map(([day, date, active]) => (
+                <div className={`preview-day ${active ? 'is-active' : ''}`} key={`${day}-${date}`}>
+                  <span>{day}</span><b>{date}</b>
+                  {active && <i />}
+                </div>
+              ))}
+            </div>
+            <div className="preview-task">
+              <span className="preview-task-icon"><Check size={15} strokeWidth={2.5} /></span>
+              <span><b>Make room for your priorities</b><small>A plan that feels like yours</small></span>
+              <span className="preview-task-time">TODAY</span>
+            </div>
+          </div>
 
-      <form onSubmit={submit}>
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <input type="password" placeholder="Password (min 6 characters)" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required />
-        <button type="submit" className="primary" disabled={busy}>
-          {mode === 'signin' ? 'Sign in' : 'Sign up'}
-        </button>
-      </form>
-      {msg && <p className="error">{msg}</p>}
-      <button className="link" onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
-        {mode === 'signin' ? 'No account? Sign up' : 'Have an account? Sign in'}
-      </button>
-    </div>
+          <div className="auth-benefits">
+            <span><CalendarDays size={16} /> Your schedule</span>
+            <span><Check size={16} /> Your progress</span>
+          </div>
+        </section>
+
+        <section className="auth-form-panel">
+          <div className="auth-form-heading">
+            <span className="auth-form-kicker">WELCOME TO DAYBOOK</span>
+            <h2>{mode === 'signin' ? 'Welcome back' : 'Create your account'}</h2>
+            <p>{mode === 'signin' ? 'Sign in to pick up where you left off.' : 'A more thoughtful day starts here.'}</p>
+          </div>
+
+          <button className="google-btn" type="button" onClick={googleLogin}>
+            <GoogleIcon /> Continue with Google
+          </button>
+
+          <div className="divider"><span>or continue with email</span></div>
+
+          <form className="auth-form" onSubmit={submit}>
+            <label htmlFor="auth-email">Email address</label>
+            <div className="auth-input-wrap">
+              <Mail size={18} aria-hidden="true" />
+              <input
+                id="auth-email"
+                type="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="auth-password-label">
+              <label htmlFor="auth-password">Password</label>
+              <span>{mode === 'signup' ? 'At least 6 characters' : ''}</span>
+            </div>
+            <div className="auth-input-wrap">
+              <LockKeyhole size={18} aria-hidden="true" />
+              <input
+                id="auth-password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                className="password-visibility"
+                type="button"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+
+            <button type="submit" className="auth-submit" disabled={busy}>
+              <span>{busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}</span>
+              {!busy && <ArrowRight size={18} />}
+            </button>
+          </form>
+
+          {msg && <p className="error">{msg}</p>}
+          <p className="auth-switch">
+            {mode === 'signin' ? 'New to Daybook?' : 'Already have an account?'}
+            <button type="button" onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
+              {mode === 'signin' ? 'Create an account' : 'Sign in'}
+            </button>
+          </p>
+          <p className="auth-privacy">A calmer place for your plans and progress.</p>
+        </section>
+      </div>
+
+      <footer className="auth-footer">
+        <span>© {new Date().getFullYear()} Daybook</span>
+        <span>Make today count, your way.</span>
+      </footer>
+    </main>
   );
 }
