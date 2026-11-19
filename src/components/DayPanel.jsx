@@ -3,7 +3,10 @@ import { prettyDate, todayKey } from '../utils/dates';
 import EventForm from './EventForm';
 import TaskPlanner from './TaskPlanner';
 
-export default function DayPanel({ date, events, tasks, saveEvent, deleteEvent, saveTask, deleteTask }) {
+export default function DayPanel({
+  date, events, tasks, templates,
+  saveEvent, deleteEvent, saveTask, deleteTask, saveTemplate, deleteTemplate,
+}) {
   const [editing, setEditing] = useState(null); // null | 'new' | event object
   const isPast = date < todayKey();
 
@@ -59,7 +62,16 @@ export default function DayPanel({ date, events, tasks, saveEvent, deleteEvent, 
 
       <div className="card">
         <h3>Time plan</h3>
-        <TaskPlanner date={date} tasks={tasks} saveTask={saveTask} deleteTask={deleteTask} />
+        <TaskPlanner
+  key={date}
+  date={date}
+  tasks={tasks}
+  templates={templates}
+  saveTask={saveTask}
+  deleteTask={deleteTask}
+  saveTemplate={saveTemplate}
+  deleteTemplate={deleteTemplate}
+/>
       </div>
     </div>
   );
