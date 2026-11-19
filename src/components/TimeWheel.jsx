@@ -10,7 +10,9 @@ function Column({ items, value, onChange }) {
   const ref = useRef(null);
   const timer = useRef(null);
   const latest = useRef({ value, onChange });
-  latest.current = { value, onChange };
+  useEffect(() => {
+    latest.current = { value, onChange };
+  }, [value, onChange]);
   const idx = Math.max(0, items.indexOf(value));
 
   useEffect(() => {
@@ -26,12 +28,21 @@ function Column({ items, value, onChange }) {
       const el = ref.current;
       if (!el) return;
       const i = Math.min(items.length - 1, Math.max(0, Math.round(el.scrollTop / ITEM)));
+      el.scrollTo({ top: i * ITEM, behavior: 'smooth' });
       if (items[i] !== latest.current.value) latest.current.onChange(items[i]);
-    }, 80);
+    }, 220);
+  };
+
+  const onWheel = (event) => {
+    event.preventDefault();
+    const el = ref.current;
+    if (!el) return;
+    const direction = event.deltaY > 0 ? 1 : -1;
+    el.scrollTo({ top: el.scrollTop + direction * ITEM, behavior: 'smooth' });
   };
 
   return (
-    <div className="wheel-col" ref={ref} onScroll={onScroll}>
+    <div className="wheel-col" ref={ref} onScroll={onScroll} onWheel={onWheel}>
       <div className="wheel-pad" />
       {items.map((it) => (
         <div key={it} className={`wheel-item ${it === value ? 'on' : ''}`} onClick={() => onChange(it)}>

@@ -23,16 +23,16 @@ function MoreButtons({ limit, total, setLimit }) {
   );
 }
 
-function EventRow({ ev, onOpenDay, onDelete }) {
+function EventRow({ ev, onView, onRequestDelete }) {
   return (
     <li className="row event-row nopointer">
-      <span className="row-date link-ish" onClick={() => onOpenDay(ev.date)}>{shortDate(ev.date)}</span>
-      <span className="row-title link-ish" onClick={() => onOpenDay(ev.date)}>{ev.title}</span>
+      <button type="button" className="row-date link-ish row-detail-button" onClick={() => onView(ev)}>{shortDate(ev.date)}</button>
+      <button type="button" className="row-title link-ish row-detail-button" onClick={() => onView(ev)}>{ev.title}</button>
       <span className={`tag category-tag tone-${categoryTone(ev.category)}`}>{ev.category}</span>
       <button
         className="icon row-action"
         aria-label="Delete event"
-        onClick={() => window.confirm('Delete this event?') && onDelete(ev.id)}
+        onClick={() => onRequestDelete(ev)}
       >
         <Trash2 size={16} />
       </button>
@@ -40,7 +40,7 @@ function EventRow({ ev, onOpenDay, onDelete }) {
   );
 }
 
-function TaskLine({ t, saveTask, deleteTask, onOpenDay, showDate }) {
+function TaskLine({ t, saveTask, onRequestDelete, onView, showDate }) {
   const [open, setOpen] = useState(true);
   const subs = t.subtasks || [];
   const toggleSub = (id) =>
@@ -50,10 +50,10 @@ function TaskLine({ t, saveTask, deleteTask, onOpenDay, showDate }) {
     <li className="task">
       <div className={`row nopointer ${t.done ? 'done' : ''}`}>
         <input type="checkbox" checked={t.done} aria-label={`Mark ${t.title} as complete`} onChange={() => saveTask({ ...t, done: !t.done })} />
-        <span className="row-date task-time link-ish" onClick={() => onOpenDay(t.date)}>
+        <button type="button" className="row-date task-time link-ish row-detail-button" onClick={() => onView(t)}>
           {showDate ? `${shortDate(t.date)} · ` : ''}{fmt12(t.start)} – {fmt12(t.end)}
-        </span>
-        <span className="row-title link-ish" onClick={() => onOpenDay(t.date)}>{t.title}</span>
+        </button>
+        <button type="button" className="row-title link-ish row-detail-button" onClick={() => onView(t)}>{t.title}</button>
         {subs.length > 0 && (
           <button className="subtask-count" title="Show or hide subtasks" onClick={() => setOpen(!open)}>
             {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -63,7 +63,7 @@ function TaskLine({ t, saveTask, deleteTask, onOpenDay, showDate }) {
         <button
           className="icon row-action"
           aria-label="Delete task"
-          onClick={() => window.confirm('Delete this task?') && deleteTask(t.id)}
+          onClick={() => onRequestDelete(t)}
         >
           <Trash2 size={16} />
         </button>
@@ -83,7 +83,7 @@ function TaskLine({ t, saveTask, deleteTask, onOpenDay, showDate }) {
   );
 }
 
-function UpcomingTaskRow({ task, onOpenDay, saveTask }) {
+function UpcomingTaskRow({ task, onView, saveTask }) {
   return (
     <li className="upcoming-task-row">
       <input
@@ -92,7 +92,7 @@ function UpcomingTaskRow({ task, onOpenDay, saveTask }) {
         aria-label={`Mark ${task.title} as complete`}
         onChange={() => saveTask({ ...task, done: !task.done })}
       />
-      <button className="upcoming-task-detail" onClick={() => onOpenDay(task.date)}>
+      <button className="upcoming-task-detail" onClick={() => onView(task)}>
         <span className="upcoming-task-title">{task.title}</span>
         <span className="upcoming-task-meta">
           <span>{shortDate(task.date)}</span>
@@ -104,7 +104,7 @@ function UpcomingTaskRow({ task, onOpenDay, saveTask }) {
   );
 }
 
-export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, deleteTask, deleteEvent }) {
+export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, deleteTask, onViewTask, onViewEvent, onRequestDelete }) {
   const today = todayKey();
   const [upLimit, setUpLimit] = useState(STEP);
   const [recLimit, setRecLimit] = useState(STEP);
@@ -144,7 +144,13 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
     .slice(0, 6);
 
   const todayTasks = tasks.filter((t) => t.date === today);
-  const lineProps = { saveTask, deleteTask, onOpenDay };
+  const lineProps = {
+    saveTask,
+    deleteTask,
+    onOpenDay,
+    onView: (task) => onViewTask(task),
+    onRequestDelete: (task) => onRequestDelete({ type: 'task', item: task }),
+  };
   const completedToday = todayTasks.filter((t) => t.done).length;
   const metrics = [
     { label: 'Total events', value: events.length, note: 'Saved in your daybook', icon: CalendarDays, tone: 'violet' },
@@ -197,7 +203,7 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
           <>
             <ul className="upcoming-task-list">
               {upcomingTasks.map((task) => (
-                <UpcomingTaskRow key={task.id} task={task} onOpenDay={onOpenDay} saveTask={saveTask} />
+                <UpcomingTaskRow key={task.id} task={task} onView={(item) => onViewTask(item)} saveTask={saveTask} />
               ))}
             </ul>
             {allUpcomingTasks.length > upcomingTasks.length && (
@@ -226,7 +232,7 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
             <>
               <ul className="list">
                 {upcomingAll.slice(0, upLimit).map((e) => (
-                  <EventRow key={e.id} ev={e} onOpenDay={onOpenDay} onDelete={deleteEvent} />
+                  <EventRow key={e.id} ev={e} onView={(item) => onViewEvent(item)} onRequestDelete={(item) => onRequestDelete({ type: 'event', item })} />
                 ))}
               </ul>
               <MoreButtons limit={upLimit} total={upcomingAll.length} setLimit={setUpLimit} />
@@ -246,7 +252,7 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
             <>
               <ul className="list">
                 {recentAll.slice(0, recLimit).map((e) => (
-                  <EventRow key={e.id} ev={e} onOpenDay={onOpenDay} onDelete={deleteEvent} />
+                  <EventRow key={e.id} ev={e} onView={(item) => onViewEvent(item)} onRequestDelete={(item) => onRequestDelete({ type: 'event', item })} />
                 ))}
               </ul>
               <MoreButtons limit={recLimit} total={recentAll.length} setLimit={setRecLimit} />

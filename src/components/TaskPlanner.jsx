@@ -4,6 +4,7 @@ import TimeWheel from './TimeWheel';
 import FilterBar from './FilterBar';
 import { notify } from '../lib/notify';
 import { fmt12, pad } from '../utils/dates';
+import { requestConfirmation } from '../lib/confirm';
 
 const addHour = (t) => {
   const [h, m] = t.split(':').map(Number);
@@ -27,7 +28,14 @@ function TaskItem({ t, starred, saveTask, deleteTask, saveTemplate }) {
   };
   const toggleSub = (id) =>
     saveTask({ ...t, subtasks: subs.map((s) => (s.id === id ? { ...s, done: !s.done } : s)) });
-  const deleteSub = (id) => saveTask({ ...t, subtasks: subs.filter((s) => s.id !== id) });
+  const deleteSub = async (id) => {
+    const subtask = subs.find((item) => item.id === id);
+    const confirmed = await requestConfirmation({
+      title: 'Delete subtask?',
+      message: `Delete "${subtask?.title || 'this subtask'}"? This cannot be undone.`,
+    });
+    if (confirmed) saveTask({ ...t, subtasks: subs.filter((item) => item.id !== id) });
+  };
 
   return (
     <li className="task">
@@ -47,7 +55,13 @@ function TaskItem({ t, starred, saveTask, deleteTask, saveTemplate }) {
         >
           <Star size={16} fill={starred ? 'currentColor' : 'none'} />
         </button>
-        <button className="icon task-icon-button danger-button" aria-label="Delete task" onClick={() => deleteTask(t.id)}><Trash2 size={16} /></button>
+        <button className="icon task-icon-button danger-button" aria-label="Delete task" onClick={async () => {
+          const confirmed = await requestConfirmation({
+            title: 'Delete task?',
+            message: `Delete "${t.title}"? This cannot be undone.`,
+          });
+          if (confirmed) deleteTask(t.id);
+        }}><Trash2 size={16} /></button>
       </div>
 
       <ul className="subs">
@@ -146,7 +160,13 @@ export default function TaskPlanner({
       <details className="templates" open>
         <summary>★ Saved tasks ({templates.length})</summary>
         {templates.length === 0 ? (
-          <p className="muted">Press ☆ on any task to save it here and reuse it on any date.</p>
+          <div className="saved-tasks-empty">
+            <span className="saved-tasks-empty-icon"><Star size={18} /></span>
+            <div>
+              <strong>No saved tasks yet</strong>
+              <p>Use the star beside a task to save it here for quick reuse.</p>
+            </div>
+          </div>
         ) : (
           <ul className="list">
             {templates.map((tpl) => (

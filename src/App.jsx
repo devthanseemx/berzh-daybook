@@ -13,6 +13,8 @@ import Login from './components/Login';
 import ImportExport from './components/ImportExport';
 import ProfileMenu from './components/ProfileMenu';
 import AppLoader from './components/AppLoader';
+import ConfirmDialog from './components/ConfirmDialog';
+import DetailModal from './components/DetailModal';
 import './App.css';
 
 function Main({ user }) {
@@ -23,6 +25,15 @@ function Main({ user }) {
   const [view, setView] = useState('dashboard');
   const [selected, setSelected] = useState(todayKey());
   const [showIO, setShowIO] = useState(false);
+  const [confirmState, setConfirmState] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const [editingEventId, setEditingEventId] = useState(null);
+
+  useEffect(() => {
+    const onConfirm = (event) => setConfirmState(event.detail);
+    window.addEventListener('daybook-confirm', onConfirm);
+    return () => window.removeEventListener('daybook-confirm', onConfirm);
+  }, []);
 
   const meta = user?.user_metadata || {};
   const firstName = (meta.full_name || meta.name || '').split(' ')[0];
@@ -56,9 +67,16 @@ function Main({ user }) {
         return !previous || previous.done !== subtask.done;
       })
     );
-    const savedTask = subtasksChanged && nextSubtasks.length
-      ? { ...t, done: nextSubtasks.every((subtask) => subtask.done) }
-      : t;
+    const mainTaskChanged = old && old.done !== t.done;
+    const savedTask = mainTaskChanged && nextSubtasks.length
+      ? {
+          ...t,
+          done: t.done,
+          subtasks: nextSubtasks.map((subtask) => ({ ...subtask, done: t.done })),
+        }
+      : subtasksChanged && nextSubtasks.length
+        ? { ...t, done: nextSubtasks.every((subtask) => subtask.done) }
+        : t;
     tk.save(savedTask);
     if (!old) return notify.success('Task added');
     if (old.done !== savedTask.done) {
@@ -111,8 +129,9 @@ function Main({ user }) {
     notify.signedOut('You have been signed out');
   };
 
-  const openDay = (key) => {
+  const openDay = (key, eventId = null) => {
     setSelected(key);
+    setEditingEventId(eventId);
     setView('calendar');
   };
 
@@ -155,12 +174,26 @@ function Main({ user }) {
           saveTask={saveTask}
           deleteTask={deleteTask}
           deleteEvent={deleteEvent}
+          onViewTask={(task) => setDetail({ type: 'task', item: task })}
+          onViewEvent={(event) => setDetail({ type: 'event', item: event })}
+          onRequestDelete={(target) => setConfirmState({
+            title: `Delete ${target.type}?`,
+            message: `Delete "${target.item.title}"? This cannot be undone.`,
+            confirmLabel: 'Delete',
+            tone: 'danger',
+            resolve: (confirmed) => {
+              if (confirmed) target.type === 'task' ? deleteTask(target.item.id) : deleteEvent(target.item.id);
+              setConfirmState(null);
+              setDetail(null);
+            },
+          })}
         />
       ) : (
         <div className="split">
           <Calendar events={events} tasks={tasks} selected={selected} onSelect={setSelected} />
           <DayPanel
             date={selected}
+            initialEditId={editingEventId}
             events={events.filter((e) => e.date === selected)}
             tasks={tasks.filter((t) => t.date === selected)}
             templates={templates}
@@ -170,6 +203,7 @@ function Main({ user }) {
             deleteTask={deleteTask}
             saveTemplate={saveTemplate}
             deleteTemplate={deleteTemplate}
+            onEditingDone={() => setEditingEventId(null)}
           />
         </div>
       )}
@@ -181,6 +215,46 @@ function Main({ user }) {
           templates={templates}
           onImport={importData}
           onClose={() => setShowIO(false)}
+        />
+      )}
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title}
+        message={confirmState?.message}
+        confirmLabel={confirmState?.confirmLabel}
+        tone={confirmState?.tone}
+        onCancel={() => {
+          if (confirmState?.resolve) confirmState.resolve(false);
+          setConfirmState(null);
+        }}
+        onConfirm={() => {
+          if (confirmState?.resolve) confirmState.resolve(true);
+          setConfirmState(null);
+        }}
+      />
+      {detail && (
+        <DetailModal
+          detail={detail}
+          onClose={() => setDetail(null)}
+          onEdit={(entry) => {
+            setDetail(null);
+            openDay(entry.item.date, entry.type === 'event' ? entry.item.id : null);
+          }}
+          onOpenCalendar={(date) => {
+            setDetail(null);
+            openDay(date);
+          }}
+          onDelete={(item) => setConfirmState({
+            title: `Delete ${detail.type}?`,
+            message: `Delete "${item.title}"? This cannot be undone.`,
+            confirmLabel: 'Delete',
+            tone: 'danger',
+            resolve: (confirmed) => {
+              if (confirmed) detail.type === 'task' ? deleteTask(item.id) : deleteEvent(item.id);
+              setConfirmState(null);
+              setDetail(null);
+            },
+          })}
         />
       )}
     </div>
