@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
-  BriefcaseBusiness, CalendarDays, CheckCircle2, ChevronDown, ChevronRight,
-  CircleAlert, Clock3, ListTodo, Trash2, TrendingUp,
+  ArrowUpRight, BriefcaseBusiness, CalendarDays, CheckCircle2, ChevronDown,
+  ChevronRight, CircleAlert, Clock3, ListTodo, Trash2, TrendingUp,
 } from 'lucide-react';
 import { todayKey, shortDate, prettyDate, fmt12 } from '../utils/dates';
 import FilterBar from './FilterBar';
@@ -82,6 +82,27 @@ function TaskLine({ t, saveTask, deleteTask, onOpenDay, showDate }) {
   );
 }
 
+function UpcomingTaskRow({ task, onOpenDay, saveTask }) {
+  return (
+    <li className="upcoming-task-row">
+      <input
+        type="checkbox"
+        checked={task.done}
+        aria-label={`Mark ${task.title} as complete`}
+        onChange={() => saveTask({ ...task, done: !task.done })}
+      />
+      <button className="upcoming-task-detail" onClick={() => onOpenDay(task.date)}>
+        <span className="upcoming-task-title">{task.title}</span>
+        <span className="upcoming-task-meta">
+          <span>{shortDate(task.date)}</span>
+          <span>{fmt12(task.start)} – {fmt12(task.end)}</span>
+        </span>
+      </button>
+      <span className="upcoming-task-state">UP NEXT</span>
+    </li>
+  );
+}
+
 export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, deleteTask, deleteEvent }) {
   const today = todayKey();
   const [upLimit, setUpLimit] = useState(STEP);
@@ -97,6 +118,10 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
   const sortedEvents = [...events].sort((a, b) => a.date.localeCompare(b.date));
   const upcomingAll = sortedEvents.filter((e) => e.date >= today);
   const recentAll = sortedEvents.filter((e) => e.date < today).reverse();
+  const allUpcomingTasks = tasks
+    .filter((task) => task.date >= today && !task.done)
+    .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  const upcomingTasks = allUpcomingTasks.slice(0, 4);
 
   const filtered = tasks
     .filter((t) => range === 'all' || (range === 'upcoming' ? t.date >= today : t.date < today))
@@ -151,7 +176,41 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
         ))}
       </section>
 
-      <Charts events={events} tasks={tasks} />
+      <section className="card dashboard-card upcoming-tasks-card">
+        <div className="dashboard-card-head">
+          <div className="dashboard-section-icon blue"><ListTodo size={18} /></div>
+          <div>
+            <p className="dashboard-kicker">COMING UP</p>
+            <h2>Next on your list</h2>
+          </div>
+          <button className="upcoming-calendar-link" onClick={() => onOpenDay(today)}>
+            View calendar <ArrowUpRight size={15} />
+          </button>
+        </div>
+        {upcomingTasks.length === 0 ? (
+          <div className="upcoming-tasks-empty">
+            <CheckCircle2 size={19} />
+            <span>You're all caught up. Plan something for your day.</span>
+          </div>
+        ) : (
+          <>
+            <ul className="upcoming-task-list">
+              {upcomingTasks.map((task) => (
+                <UpcomingTaskRow key={task.id} task={task} onOpenDay={onOpenDay} saveTask={saveTask} />
+              ))}
+            </ul>
+            {allUpcomingTasks.length > upcomingTasks.length && (
+              <button
+                className="upcoming-more"
+                onClick={() => onOpenDay(allUpcomingTasks[upcomingTasks.length].date)}
+              >
+                View all {allUpcomingTasks.length} upcoming tasks
+                <ArrowUpRight size={14} />
+              </button>
+            )}
+          </>
+        )}
+      </section>
 
       <div className="grid-2">
         <section className="card dashboard-card">
@@ -237,6 +296,8 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
           </ul>
         </section>
       )}
+
+      <Charts events={events} tasks={tasks} />
     </div>
   );
 }

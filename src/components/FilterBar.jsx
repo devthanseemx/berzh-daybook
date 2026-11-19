@@ -1,12 +1,20 @@
+import Dropdown from './Dropdown';
+
 export default function FilterBar({ status, setStatus, order, setOrder, range, setRange }) {
   return (
     <div className="filters">
       {setRange && (
-        <select value={range} onChange={(e) => setRange(e.target.value)} aria-label="Date range">
-          <option value="upcoming">Upcoming</option>
-          <option value="past">Past</option>
-          <option value="all">All dates</option>
-        </select>
+        <Dropdown
+          ariaLabel="Date range"
+          className="filter-dropdown"
+          value={range}
+          onChange={setRange}
+          options={[
+            { value: 'upcoming', label: 'Upcoming' },
+            { value: 'past', label: 'Past' },
+            { value: 'all', label: 'All dates' },
+          ]}
+        />
       )}
       <div className="seg" role="group" aria-label="Status filter">
         {[['all', 'All'], ['pending', 'Pending'], ['done', 'Completed']].map(([v, label]) => (
@@ -15,10 +23,16 @@ export default function FilterBar({ status, setStatus, order, setOrder, range, s
           </button>
         ))}
       </div>
-      <select value={order} onChange={(e) => setOrder(e.target.value)} aria-label="Sort order">
-        <option value="asc">Earliest first</option>
-        <option value="desc">Latest first</option>
-      </select>
+      <Dropdown
+        ariaLabel="Sort order"
+        className="filter-dropdown"
+        value={order}
+        onChange={setOrder}
+        options={[
+          { value: 'asc', label: 'Earliest first' },
+          { value: 'desc', label: 'Latest first' },
+        ]}
+      />
     </div>
   );
 }

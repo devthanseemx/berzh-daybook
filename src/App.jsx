@@ -12,6 +12,7 @@ import DayPanel from './components/DayPanel';
 import Login from './components/Login';
 import ImportExport from './components/ImportExport';
 import ProfileMenu from './components/ProfileMenu';
+import AppLoader from './components/AppLoader';
 import './App.css';
 
 function Main({ user }) {
@@ -104,7 +105,7 @@ function Main({ user }) {
   };
 
   if (!(evReady && tkReady && tpReady)) {
-    return <div className="app"><p className="muted">Loading your data…</p></div>;
+    return <AppLoader message="Loading your daybook" />;
   }
 
   return (
@@ -178,14 +179,24 @@ export default function App() {
   const { user, ready } = useAuth();
 
   let body;
-  if (!ready) body = <div className="app"><p className="muted">Loading…</p></div>;
+  if (!ready) body = <AppLoader message="Checking your session" />;
   else if (cloudEnabled && !user) body = <div className="auth-shell"><Login /></div>;
   else body = <Main key={user?.id ?? 'local'} user={user} />;
 
   return (
     <>
       {body}
-      <Toaster position="top-right" richColors closeButton theme="system" />
+      <Toaster
+        position="bottom-right"
+        closeButton
+        theme="light"
+        toastOptions={{
+          className: 'daybook-toast',
+          closeButton: true,
+          closeButtonAriaLabel: 'Dismiss notification',
+          duration: 3600,
+        }}
+      />
     </>
   );
 }

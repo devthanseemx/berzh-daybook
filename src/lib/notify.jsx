@@ -1,19 +1,25 @@
 import { toast } from 'sonner';
-import { Trash2, LogOut, LogIn, Star, Download, Upload, Copy, Undo2 } from 'lucide-react';
+import {
+  AlertTriangle, Check, Copy, Download, Info, LogIn, LogOut, Star, Trash2, Undo2, Upload, X,
+} from 'lucide-react';
 
-const icon = (Icon) => <Icon size={18} />;
+const icon = (Icon, tone) => (
+  <span className={`toast-icon toast-icon-${tone}`}>
+    <Icon size={15} strokeWidth={2.5} />
+  </span>
+);
 
 export const notify = {
-  success: (m) => toast.success(m),            // ✔ green check
-  error: (m) => toast.error(m),                // ✖ red
-  info: (m) => toast.info(m),                  // ℹ blue
-  warning: (m) => toast.warning(m),            // ⚠ amber
-  deleted: (m) => toast(m, { icon: icon(Trash2) }),
-  reopened: (m) => toast.info(m, { icon: icon(Undo2) }),
-  saved: (m) => toast.success(m, { icon: icon(Star) }),
-  imported: (m) => toast.success(m, { icon: icon(Upload) }),
-  exported: (m) => toast.success(m, { icon: icon(Download) }),
-  copied: (m) => toast.success(m, { icon: icon(Copy) }),
-  signedIn: (m) => toast.success(m, { icon: icon(LogIn) }),
-  signedOut: (m) => toast.info(m, { icon: icon(LogOut) }),
+  success: (m) => toast.success(m, { icon: icon(Check, 'success') }),
+  error: (m) => toast.error(m, { icon: icon(X, 'error') }),
+  info: (m) => toast.info(m, { icon: icon(Info, 'info') }),
+  warning: (m) => toast.warning(m, { icon: icon(AlertTriangle, 'warning') }),
+  deleted: (m) => toast(m, { icon: icon(Trash2, 'error') }),
+  reopened: (m) => toast.info(m, { icon: icon(Undo2, 'info') }),
+  saved: (m) => toast.success(m, { icon: icon(Star, 'success') }),
+  imported: (m) => toast.success(m, { icon: icon(Upload, 'success') }),
+  exported: (m) => toast.success(m, { icon: icon(Download, 'success') }),
+  copied: (m) => toast.success(m, { icon: icon(Copy, 'success') }),
+  signedIn: (m) => toast.success(m, { icon: icon(LogIn, 'success') }),
+  signedOut: (m) => toast.info(m, { icon: icon(LogOut, 'info') }),
 };

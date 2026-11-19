@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Dropdown from './Dropdown';
 
 export const CATEGORIES = ['Job application', 'Interview', 'Meeting', 'Personal', 'Other'];
 
@@ -10,6 +11,7 @@ export default function EventForm({ date, initial, onSave, onCancel }) {
     }
   );
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const setCategory = (category) => setF((current) => ({ ...current, category }));
   const isJob = f.category === 'Job application';
 
   const submit = (e) => {
@@ -21,9 +23,13 @@ export default function EventForm({ date, initial, onSave, onCancel }) {
   return (
     <form className="form" onSubmit={submit}>
       <input placeholder="Event title (e.g. Applied to Acme Corp)" value={f.title} onChange={set('title')} required />
-      <select value={f.category} onChange={set('category')}>
-        {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-      </select>
+      <Dropdown
+        ariaLabel="Event category"
+        className="event-category-dropdown"
+        value={f.category}
+        onChange={setCategory}
+        options={CATEGORIES.map((category) => ({ value: category, label: category }))}
+      />
 
       {isJob && (
         <>
