@@ -111,3 +111,42 @@ button.icon { border: none; background: none; color: var(--muted); }
 .day-head { margin: 0 0 2px; font-size: 0.95rem; color: var(--muted); }
 .link-ish { cursor: pointer; }
 .link-ish:hover { color: var(--accent); }
+
+.topbar { gap: 12px; flex-wrap: wrap; }
+.top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.row-date { min-width: 150px; flex-shrink: 0; }
+
+/* import / export window */
+.modal-back {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 50;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 24px 12px; overflow-y: auto;
+}
+.modal {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px; width: 100%; max-width: 780px;
+}
+.modal h3 { margin: 18px 0 6px; }
+.fields { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.fields th, .fields td { text-align: left; vertical-align: top; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.example {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px; overflow: auto; font-size: 0.8rem; max-height: 280px;
+}
+.modal textarea { width: 100%; font-family: ui-monospace, Menlo, monospace; font-size: 0.85rem; }
+.error-list { color: #dc2626; font-size: 0.9rem; padding-left: 18px; }
+.ok { color: var(--tk); }
+
+/* login */
+.login { max-width: 380px; margin: 12vh auto; }
+.login form { display: flex; flex-direction: column; gap: 8px; }
+
+.google-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 10px; font-weight: 500;
+}
+.divider {
+  display: flex; align-items: center; gap: 10px; margin: 14px 0;
+  color: var(--muted); font-size: 0.8rem;
+}
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }

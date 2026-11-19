@@ -1,9 +1,15 @@
 import { useState } from 'react';
 import TimeWheel from './TimeWheel';
+import { fmt12, pad } from '../utils/dates';
 
 const addHour = (t) => {
   const [h, m] = t.split(':').map(Number);
   return `${String(Math.min(h + 1, 23)).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
+const snap5 = (t) => {
+  const [h, m] = t.split(':').map(Number);
+  return `${pad(h)}:${pad(Math.min(55, Math.round(m / 5) * 5))}`;
 };
 
 function TaskItem({ t, starred, saveTask, deleteTask, saveTemplate }) {
@@ -24,7 +30,7 @@ function TaskItem({ t, starred, saveTask, deleteTask, saveTemplate }) {
     <li className="task">
       <div className={`row ${t.done ? 'done' : ''}`}>
         <input type="checkbox" checked={t.done} onChange={() => saveTask({ ...t, done: !t.done })} />
-        <span className="row-date">{t.start} – {t.end}</span>
+        <span className="row-date">{fmt12(t.start)} – {fmt12(t.end)}</span>
         <span className="row-title">{t.title}</span>
         {subs.length > 0 && (
           <span className="tag">{subs.filter((s) => s.done).length}/{subs.length}</span>
@@ -61,7 +67,7 @@ export default function TaskPlanner({
   date, tasks, templates, saveTask, deleteTask, saveTemplate, deleteTemplate,
 }) {
   const sorted = [...tasks].sort((a, b) => a.start.localeCompare(b.start));
-  const lastEnd = sorted.length ? sorted[sorted.length - 1].end : '09:00';
+  const lastEnd = snap5(sorted.length ? sorted[sorted.length - 1].end : '09:00');
 
   const [start, setStart] = useState(lastEnd);
   const [end, setEnd] = useState(addHour(lastEnd));
@@ -129,7 +135,7 @@ export default function TaskPlanner({
           <ul className="list">
             {templates.map((tpl) => (
               <li key={tpl.id} className="row nopointer">
-                <span className="row-date">{tpl.start} – {tpl.end}</span>
+                <span className="row-date">{fmt12(tpl.start)} – {fmt12(tpl.end)}</span>
                 <span className="row-title">
                   {tpl.title}
                   {tpl.subtasks.length > 0 && <span className="muted"> · {tpl.subtasks.length} subtasks</span>}

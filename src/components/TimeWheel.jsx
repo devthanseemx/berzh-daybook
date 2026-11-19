@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
+import { pad } from '../utils/dates';
 
 const ITEM = 36; // px, must match .wheel-item height in the CSS
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
+const HOURS = Array.from({ length: 12 }, (_, i) => pad(i + 1));
+const MINUTES = Array.from({ length: 12 }, (_, i) => pad(i * 5));
+const AMPM = ['AM', 'PM'];
 
 function Column({ items, value, onChange }) {
   const ref = useRef(null);
@@ -11,7 +13,6 @@ function Column({ items, value, onChange }) {
   latest.current = { value, onChange };
   const idx = Math.max(0, items.indexOf(value));
 
-  // keep the scroll position in sync with the value
   useEffect(() => {
     const el = ref.current;
     if (el && Math.round(el.scrollTop / ITEM) !== idx) el.scrollTop = idx * ITEM;
@@ -33,11 +34,7 @@ function Column({ items, value, onChange }) {
     <div className="wheel-col" ref={ref} onScroll={onScroll}>
       <div className="wheel-pad" />
       {items.map((it) => (
-        <div
-          key={it}
-          className={`wheel-item ${it === value ? 'on' : ''}`}
-          onClick={() => onChange(it)}
-        >
+        <div key={it} className={`wheel-item ${it === value ? 'on' : ''}`} onClick={() => onChange(it)}>
           {it}
         </div>
       ))}
@@ -47,14 +44,24 @@ function Column({ items, value, onChange }) {
 }
 
 export default function TimeWheel({ value, onChange, label }) {
-  const [h, m] = value.split(':');
+  const [h24, m] = value.split(':').map(Number);
+  const hour = pad(h24 % 12 || 12);
+  const min = pad(m);
+  const ap = h24 >= 12 ? 'PM' : 'AM';
+
+  const emit = (hh, mm, a) => {
+    const h = (Number(hh) % 12) + (a === 'PM' ? 12 : 0);
+    onChange(`${pad(h)}:${mm}`);
+  };
+
   return (
     <div className="wheel">
       {label && <span className="wheel-label">{label}</span>}
       <div className="wheel-box">
-        <Column items={HOURS} value={h} onChange={(nh) => onChange(`${nh}:${m}`)} />
+        <Column items={HOURS} value={hour} onChange={(v) => emit(v, min, ap)} />
         <span className="wheel-colon">:</span>
-        <Column items={MINUTES} value={m} onChange={(nm) => onChange(`${h}:${nm}`)} />
+        <Column items={MINUTES} value={min} onChange={(v) => emit(hour, v, ap)} />
+        <Column items={AMPM} value={ap} onChange={(v) => emit(hour, min, v)} />
         <div className="wheel-band" />
       </div>
     </div>

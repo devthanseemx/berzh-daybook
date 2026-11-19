@@ -21,3 +21,8 @@ export const monthGrid = (year, month) => {
   );
 };
 
+// "14:30" -> "2:30 PM"
+export const fmt12 = (t) => {
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${pad(m)} ${h >= 12 ? 'PM' : 'AM'}`;
+};
