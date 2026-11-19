@@ -27,12 +27,13 @@ export default function DayPanel({
 
   return (
     <div className="day-panel">
-      <div className="card">
+      <div className="card day-header-card">
+        <div className="day-header-kicker">{isPast ? 'PAST DAY' : date === todayKey() ? 'TODAY' : 'UPCOMING DAY'}</div>
         <h2>{prettyDate(date)}</h2>
-        <p className="muted">{isPast ? 'Past day' : date === todayKey() ? 'Today' : 'Upcoming day'}</p>
+        <p className="muted">{events.length} event{events.length === 1 ? '' : 's'} · {tasks.length} task{tasks.length === 1 ? '' : 's'} planned</p>
       </div>
 
-      <div className="card">
+      <div className="card day-events-card">
         <div className="card-head">
           <h3>Events</h3>
           {!activeEditing && <button className="primary action-button" onClick={() => setEditing('new')}><Plus size={16} /> Add event</button>}
@@ -79,7 +80,7 @@ export default function DayPanel({
         ))}
       </div>
 
-      <div className="card">
+      <div className="card day-time-card">
         <h3 className="time-plan-title"><CalendarPlus size={18} /> Time plan</h3>
         <TaskPlanner
   key={date}
