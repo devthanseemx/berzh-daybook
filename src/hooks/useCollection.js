@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { notify } from '../lib/notify';
 
 const read = (key) => {
   try {
@@ -9,7 +10,11 @@ const read = (key) => {
   }
 };
 
-const logErr = ({ error }) => error && console.error('Supabase error:', error.message);
+const logErr = ({ error }) => {
+  if (!error) return;
+  console.error('Supabase error:', error.message);
+  notify.error(`Could not sync with Supabase: ${error.message}`);
+};
 
 export default function useCollection(name, userId) {
   const cloud = Boolean(supabase && userId);
@@ -23,7 +28,10 @@ export default function useCollection(name, userId) {
     let cancelled = false;
     supabase.from(name).select('data').then(({ data, error }) => {
       if (cancelled) return;
-      if (error) console.error(`Loading ${name} failed:`, error.message);
+      if (error) {
+  console.error(`Loading ${name} failed:`, error.message);
+  notify.error(`Could not load ${name}: ${error.message}`);
+}
       else setItems(data.map((r) => r.data));
       setReady(true);
     });

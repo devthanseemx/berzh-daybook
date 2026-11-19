@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import TimeWheel from './TimeWheel';
+import FilterBar from './FilterBar';
+import { notify } from '../lib/notify';
 import { fmt12, pad } from '../utils/dates';
 
 const addHour = (t) => {
   const [h, m] = t.split(':').map(Number);
-  return `${String(Math.min(h + 1, 23)).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  return `${pad(Math.min(h + 1, 23))}:${pad(m)}`;
 };
 
 const snap5 = (t) => {
@@ -72,13 +74,17 @@ export default function TaskPlanner({
   const [start, setStart] = useState(lastEnd);
   const [end, setEnd] = useState(addHour(lastEnd));
   const [title, setTitle] = useState('');
-  const [error, setError] = useState('');
+  const [status, setStatus] = useState('all');
+  const [order, setOrder] = useState('asc');
+
+  const shown = sorted
+    .filter((t) => status === 'all' || (status === 'done' ? t.done : !t.done))
+    .sort((a, b) => (order === 'asc' ? a.start.localeCompare(b.start) : b.start.localeCompare(a.start)));
 
   const add = (e) => {
     e.preventDefault();
-    if (!title.trim()) return;
-    if (end <= start) return setError('End time must be after start time.');
-    setError('');
+    if (!title.trim()) return notify.warning('Enter a task name first');
+    if (end <= start) return notify.warning('End time must be after the start time');
     saveTask({ id: crypto.randomUUID(), date, start, end, title: title.trim(), done: false, subtasks: [] });
     setTitle('');
     setStart(end); // next block starts where this one ended
@@ -111,10 +117,16 @@ export default function TaskPlanner({
           <button type="submit" className="primary">Add</button>
         </div>
       </form>
-      {error && <p className="error">{error}</p>}
+
+      {sorted.length > 1 && (
+        <div className="section-head" style={{ marginTop: 14 }}>
+          <span className="muted">{shown.length} of {sorted.length} tasks</span>
+          <FilterBar status={status} setStatus={setStatus} order={order} setOrder={setOrder} />
+        </div>
+      )}
 
       <ul className="list">
-        {sorted.map((t) => (
+        {shown.map((t) => (
           <TaskItem
             key={t.id}
             t={t}
@@ -124,8 +136,9 @@ export default function TaskPlanner({
             saveTemplate={saveTemplate}
           />
         ))}
-        {sorted.length === 0 && <p className="muted">No time blocks for this day yet.</p>}
       </ul>
+      {sorted.length === 0 && <p className="muted">No time blocks for this day yet.</p>}
+      {sorted.length > 0 && shown.length === 0 && <p className="muted">No tasks match this filter.</p>}
 
       <details className="templates" open>
         <summary>★ Saved tasks ({templates.length})</summary>

@@ -1,5 +1,22 @@
 import { useState } from 'react';
 import { todayKey, shortDate, prettyDate, fmt12 } from '../utils/dates';
+import FilterBar from './FilterBar';
+import Charts from './Charts';
+
+const STEP = 5;
+
+function MoreButtons({ limit, total, setLimit }) {
+  if (total <= STEP) return null;
+  const shown = Math.min(limit, total);
+  return (
+    <div className="more">
+      {shown < total && (
+        <button onClick={() => setLimit(shown + STEP)}>Show more · {total - shown} left</button>
+      )}
+      {shown > STEP && <button className="link" onClick={() => setLimit(STEP)}>Show less</button>}
+    </div>
+  );
+}
 
 function EventRow({ ev, onOpenDay, onDelete }) {
   return (
@@ -60,21 +77,35 @@ function TaskLine({ t, saveTask, deleteTask, onOpenDay, showDate }) {
   );
 }
 
-export default function Dashboard({ events, tasks, onOpenDay, saveTask, deleteTask, deleteEvent }) {
+export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, deleteTask, deleteEvent }) {
   const today = todayKey();
+  const [upLimit, setUpLimit] = useState(STEP);
+  const [recLimit, setRecLimit] = useState(STEP);
+  const [dayLimit, setDayLimit] = useState(STEP);
+  const [range, setRange] = useState('upcoming');
+  const [status, setStatus] = useState('all');
+  const [order, setOrder] = useState('asc');
+
+  const hour = new Date().getHours();
+  const hello = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   const sortedEvents = [...events].sort((a, b) => a.date.localeCompare(b.date));
-  const upcoming = sortedEvents.filter((e) => e.date >= today).slice(0, 6);
-  const recent = sortedEvents.filter((e) => e.date < today).reverse().slice(0, 6);
+  const upcomingAll = sortedEvents.filter((e) => e.date >= today);
+  const recentAll = sortedEvents.filter((e) => e.date < today).reverse();
 
-  const upcomingTasks = tasks
-    .filter((t) => t.date >= today)
-    .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  const filtered = tasks
+    .filter((t) => range === 'all' || (range === 'upcoming' ? t.date >= today : t.date < today))
+    .filter((t) => status === 'all' || (status === 'done' ? t.done : !t.done))
+    .sort((a, b) => {
+      const c = (a.date + a.start).localeCompare(b.date + b.start);
+      return order === 'asc' ? c : -c;
+    });
   const groups = {};
-  upcomingTasks.forEach((t) => {
+  filtered.forEach((t) => {
     (groups[t.date] = groups[t.date] || []).push(t);
   });
-  const days = Object.keys(groups).sort().slice(0, 7);
+  const allDays = Object.keys(groups); // already in sorted order
+  const days = allDays.slice(0, dayLimit);
 
   const missed = tasks
     .filter((t) => t.date < today && !t.done)
@@ -86,44 +117,66 @@ export default function Dashboard({ events, tasks, onOpenDay, saveTask, deleteTa
 
   return (
     <div className="dashboard">
+      <h2 className="hello">{hello}{name ? `, ${name}` : ''} 👋</h2>
+
       <section className="stats">
         <div className="stat"><b>{events.length}</b><span>Total events</span></div>
-        <div className="stat"><b>{sortedEvents.filter((e) => e.date >= today).length}</b><span>Upcoming events</span></div>
-        <div className="stat"><b>{sortedEvents.filter((e) => e.date < today).length}</b><span>Happened</span></div>
+        <div className="stat"><b>{upcomingAll.length}</b><span>Upcoming events</span></div>
+        <div className="stat"><b>{recentAll.length}</b><span>Happened</span></div>
         <div className="stat">
           <b>{todayTasks.filter((t) => t.done).length}/{todayTasks.length}</b>
           <span>Today's tasks done</span>
         </div>
       </section>
 
+      <Charts events={events} tasks={tasks} />
+
       <div className="grid-2">
         <section className="card">
           <h2>Upcoming events</h2>
-          {upcoming.length === 0 ? (
+          {upcomingAll.length === 0 ? (
             <p className="muted">Nothing coming up. Add one from the Calendar.</p>
           ) : (
-            <ul className="list">
-              {upcoming.map((e) => <EventRow key={e.id} ev={e} onOpenDay={onOpenDay} onDelete={deleteEvent} />)}
-            </ul>
+            <>
+              <ul className="list">
+                {upcomingAll.slice(0, upLimit).map((e) => (
+                  <EventRow key={e.id} ev={e} onOpenDay={onOpenDay} onDelete={deleteEvent} />
+                ))}
+              </ul>
+              <MoreButtons limit={upLimit} total={upcomingAll.length} setLimit={setUpLimit} />
+            </>
           )}
         </section>
 
         <section className="card">
           <h2>Recent events</h2>
-          {recent.length === 0 ? (
+          {recentAll.length === 0 ? (
             <p className="muted">No past events logged yet.</p>
           ) : (
-            <ul className="list">
-              {recent.map((e) => <EventRow key={e.id} ev={e} onOpenDay={onOpenDay} onDelete={deleteEvent} />)}
-            </ul>
+            <>
+              <ul className="list">
+                {recentAll.slice(0, recLimit).map((e) => (
+                  <EventRow key={e.id} ev={e} onOpenDay={onOpenDay} onDelete={deleteEvent} />
+                ))}
+              </ul>
+              <MoreButtons limit={recLimit} total={recentAll.length} setLimit={setRecLimit} />
+            </>
           )}
         </section>
       </div>
 
       <section className="card">
-        <h2>Upcoming schedule</h2>
+        <div className="section-head">
+          <h2>Schedule</h2>
+          <FilterBar
+            range={range} setRange={setRange}
+            status={status} setStatus={setStatus}
+            order={order} setOrder={setOrder}
+          />
+        </div>
+
         {days.length === 0 ? (
-          <p className="muted">No time blocks planned from today onward.</p>
+          <p className="muted">No time blocks match this filter.</p>
         ) : (
           days.map((d) => (
             <div key={d} className="day-group">
@@ -134,6 +187,7 @@ export default function Dashboard({ events, tasks, onOpenDay, saveTask, deleteTa
             </div>
           ))
         )}
+        <MoreButtons limit={dayLimit} total={allDays.length} setLimit={setDayLimit} />
       </section>
 
       {missed.length > 0 && (

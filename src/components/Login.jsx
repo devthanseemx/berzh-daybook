@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { notify } from '../lib/notify';
 
 function GoogleIcon() {
   return (
@@ -28,7 +29,7 @@ export default function Login() {
         queryParams: { prompt: 'select_account' }, // lets you pick which Google account
       },
     });
-    if (error) setMsg(error.message);
+    if (error) notify.error(error.message);
   };
 
   const submit = async (e) => {
@@ -41,8 +42,8 @@ export default function Login() {
         ? await supabase.auth.signInWithPassword(creds)
         : await supabase.auth.signUp(creds);
     setBusy(false);
-    if (error) setMsg(error.message);
-    else if (mode === 'signup') setMsg('Account created. If email confirmation is on, confirm via the email, then sign in.');
+    if (error) notify.error(error.message);
+else if (mode === 'signup') notify.success('Account created. If email confirmation is on, check your inbox, then sign in.');
   };
 
   return (

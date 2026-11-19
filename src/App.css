@@ -150,3 +150,44 @@ button.icon { border: none; background: none; color: var(--muted); }
   color: var(--muted); font-size: 0.8rem;
 }
 .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* profile */
+.profile { position: relative; }
+.avatar-btn { padding: 0; border-radius: 50%; border: 2px solid var(--border); line-height: 0; overflow: hidden; }
+.avatar { border-radius: 50%; object-fit: cover; display: inline-block; }
+.avatar.fallback {
+  background: var(--accent); color: #fff; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.profile-pop {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 270px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+.profile-pop strong { margin-top: 8px; word-break: break-word; }
+.profile-pop .muted { word-break: break-all; }
+.signout { margin-top: 14px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+/* dashboard */
+.hello { margin: 0 0 14px; }
+.section-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.section-head h2 { margin: 0; }
+.filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.filters select { padding: 6px 8px; font-size: 0.85rem; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button { border: none; border-radius: 0; padding: 6px 10px; font-size: 0.85rem; }
+.seg button.active { background: var(--accent); color: #fff; }
+.more { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+
+/* charts */
+.charts { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px; }
+.charts .card { margin-bottom: 0; min-width: 0; }
+.charts .card.full { grid-column: 1 / -1; }
+.recharts-cartesian-axis-tick-value { fill: var(--muted); }
+.recharts-cartesian-grid line { stroke: var(--border); }
+.recharts-legend-item-text { color: var(--text) !important; }
+
+@media (max-width: 820px) {
+  .charts { grid-template-columns: 1fr; }
+}

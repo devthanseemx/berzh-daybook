@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { EXAMPLE, FIELDS, parseImport } from '../utils/importData';
 import { todayKey } from '../utils/dates';
+import { notify } from '../lib/notify';
 
 const exampleText = JSON.stringify(EXAMPLE, null, 2);
 
@@ -19,18 +20,21 @@ export default function ImportExport({ events, tasks, templates, onImport, onClo
     e.target.value = '';
   };
 
-  const doImport = () => {
-    setOkMsg('');
-    const { data, errors: errs } = parseImport(text);
-    setErrors(errs);
-    if (errs.length) return;
-    if (!data.events.length && !data.tasks.length && !data.templates.length) {
-      return setErrors(['Nothing to import: add items to "events", "tasks" or "templates".']);
-    }
-    onImport(data);
-    setOkMsg(`Imported ${data.events.length} events, ${data.tasks.length} tasks, ${data.templates.length} saved tasks.`);
-    setText('');
-  };
+const doImport = () => {
+  setOkMsg('');
+  const { data, errors: errs } = parseImport(text);
+  setErrors(errs);
+  if (errs.length) return notify.error(`Import failed: ${errs.length} problem${errs.length > 1 ? 's' : ''} found`);
+  if (!data.events.length && !data.tasks.length && !data.templates.length) {
+    setErrors(['Nothing to import: add items to "events", "tasks" or "templates".']);
+    return notify.warning('Nothing to import');
+  }
+  onImport(data);
+  const msg = `Imported ${data.events.length} events, ${data.tasks.length} tasks, ${data.templates.length} saved tasks.`;
+  setOkMsg(msg);
+  notify.imported(msg);
+  setText('');
+};
 
   const exportAll = () => {
     const payload = {
@@ -48,6 +52,7 @@ export default function ImportExport({ events, tasks, templates, onImport, onClo
     a.download = `daybook-backup-${todayKey()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    notify.exported('Backup downloaded');
   };
 
   return (
@@ -78,7 +83,7 @@ export default function ImportExport({ events, tasks, templates, onImport, onClo
         <pre className="example">{exampleText}</pre>
         <div className="form-actions">
           <button onClick={() => setText(exampleText)}>Use this example</button>
-          <button onClick={() => navigator.clipboard?.writeText(exampleText)}>Copy example</button>
+          <button onClick={() => { navigator.clipboard?.writeText(exampleText); notify.copied('Example copied'); }}>Copy example</button>
         </div>
 
         <h3>2. Paste your JSON</h3>
