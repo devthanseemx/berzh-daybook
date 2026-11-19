@@ -1,0 +1,66 @@
+import { useState } from 'react';
+import { prettyDate, todayKey } from '../utils/dates';
+import EventForm from './EventForm';
+import TaskPlanner from './TaskPlanner';
+
+export default function DayPanel({ date, events, tasks, saveEvent, deleteEvent, saveTask, deleteTask }) {
+  const [editing, setEditing] = useState(null); // null | 'new' | event object
+  const isPast = date < todayKey();
+
+  const handleSave = (ev) => {
+    saveEvent(ev);
+    setEditing(null);
+  };
+
+  return (
+    <div className="day-panel">
+      <div className="card">
+        <h2>{prettyDate(date)}</h2>
+        <p className="muted">{isPast ? 'Past day' : date === todayKey() ? 'Today' : 'Upcoming day'}</p>
+      </div>
+
+      <div className="card">
+        <div className="card-head">
+          <h3>Events</h3>
+          {!editing && <button className="primary" onClick={() => setEditing('new')}>+ Add event</button>}
+        </div>
+
+        {editing && (
+          <EventForm
+            key={editing === 'new' ? 'new' : editing.id}
+            date={date}
+            initial={editing === 'new' ? null : editing}
+            onSave={handleSave}
+            onCancel={() => setEditing(null)}
+          />
+        )}
+
+        {events.length === 0 && !editing && <p className="muted">No events on this date.</p>}
+
+        {events.map((ev) => (
+          <article key={ev.id} className="event">
+            <div className="card-head">
+              <strong>{ev.title}</strong>
+              <span className="tag">{ev.category}</span>
+            </div>
+            {ev.company && <p><b>Company:</b> {ev.company}</p>}
+            {ev.jobTitle && <p><b>Job title:</b> {ev.jobTitle}</p>}
+            {ev.salary && <p><b>Salary:</b> {ev.salary}</p>}
+            {ev.description && <p><b>Description:</b> {ev.description}</p>}
+            {ev.nextSteps && <p><b>To do:</b> {ev.nextSteps}</p>}
+            {ev.notes && <p><b>Notes:</b> {ev.notes}</p>}
+            <div className="form-actions">
+              <button onClick={() => setEditing(ev)}>Edit</button>
+              <button onClick={() => window.confirm('Delete this event?') && deleteEvent(ev.id)}>Delete</button>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="card">
+        <h3>Time plan</h3>
+        <TaskPlanner date={date} tasks={tasks} saveTask={saveTask} deleteTask={deleteTask} />
+      </div>
+    </div>
+  );
+}
