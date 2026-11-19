@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { CalendarPlus, Pencil, Plus, Trash2 } from 'lucide-react';
 import { prettyDate, todayKey } from '../utils/dates';
+import { categoryTone } from '../utils/categoryTone';
 import EventForm from './EventForm';
 import TaskPlanner from './TaskPlanner';
 
@@ -25,7 +27,7 @@ export default function DayPanel({
       <div className="card">
         <div className="card-head">
           <h3>Events</h3>
-          {!editing && <button className="primary" onClick={() => setEditing('new')}>+ Add event</button>}
+          {!editing && <button className="primary action-button" onClick={() => setEditing('new')}><Plus size={16} /> Add event</button>}
         </div>
 
         {editing && (
@@ -44,7 +46,7 @@ export default function DayPanel({
           <article key={ev.id} className="event">
             <div className="card-head">
               <strong>{ev.title}</strong>
-              <span className="tag">{ev.category}</span>
+              <span className={`tag category-tag tone-${categoryTone(ev.category)}`}>{ev.category}</span>
             </div>
             {ev.company && <p><b>Company:</b> {ev.company}</p>}
             {ev.jobTitle && <p><b>Job title:</b> {ev.jobTitle}</p>}
@@ -53,15 +55,15 @@ export default function DayPanel({
             {ev.nextSteps && <p><b>To do:</b> {ev.nextSteps}</p>}
             {ev.notes && <p><b>Notes:</b> {ev.notes}</p>}
             <div className="form-actions">
-              <button onClick={() => setEditing(ev)}>Edit</button>
-              <button onClick={() => window.confirm('Delete this event?') && deleteEvent(ev.id)}>Delete</button>
+              <button className="action-button" onClick={() => setEditing(ev)}><Pencil size={15} /> Edit</button>
+              <button className="action-button danger-button" onClick={() => window.confirm('Delete this event?') && deleteEvent(ev.id)}><Trash2 size={15} /> Delete</button>
             </div>
           </article>
         ))}
       </div>
 
       <div className="card">
-        <h3>Time plan</h3>
+        <h3 className="time-plan-title"><CalendarPlus size={18} /> Time plan</h3>
         <TaskPlanner
   key={date}
   date={date}

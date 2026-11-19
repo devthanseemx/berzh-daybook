@@ -4,6 +4,7 @@ import {
   ChevronRight, CircleAlert, Clock3, ListTodo, Trash2, TrendingUp,
 } from 'lucide-react';
 import { todayKey, shortDate, prettyDate, fmt12 } from '../utils/dates';
+import { categoryTone } from '../utils/categoryTone';
 import FilterBar from './FilterBar';
 import Charts from './Charts';
 
@@ -27,7 +28,7 @@ function EventRow({ ev, onOpenDay, onDelete }) {
     <li className="row event-row nopointer">
       <span className="row-date link-ish" onClick={() => onOpenDay(ev.date)}>{shortDate(ev.date)}</span>
       <span className="row-title link-ish" onClick={() => onOpenDay(ev.date)}>{ev.title}</span>
-      <span className="tag">{ev.category}</span>
+      <span className={`tag category-tag tone-${categoryTone(ev.category)}`}>{ev.category}</span>
       <button
         className="icon row-action"
         aria-label="Delete event"
@@ -48,7 +49,7 @@ function TaskLine({ t, saveTask, deleteTask, onOpenDay, showDate }) {
   return (
     <li className="task">
       <div className={`row nopointer ${t.done ? 'done' : ''}`}>
-        <input type="checkbox" checked={t.done} onChange={() => saveTask({ ...t, done: !t.done })} />
+        <input type="checkbox" checked={t.done} aria-label={`Mark ${t.title} as complete`} onChange={() => saveTask({ ...t, done: !t.done })} />
         <span className="row-date task-time link-ish" onClick={() => onOpenDay(t.date)}>
           {showDate ? `${shortDate(t.date)} · ` : ''}{fmt12(t.start)} – {fmt12(t.end)}
         </span>
@@ -72,7 +73,7 @@ function TaskLine({ t, saveTask, deleteTask, onOpenDay, showDate }) {
         <ul className="subs">
           {subs.map((s) => (
             <li key={s.id} className={s.done ? 'done' : ''}>
-              <input type="checkbox" checked={s.done} onChange={() => toggleSub(s.id)} />
+              <input type="checkbox" checked={s.done} aria-label={`Mark ${s.title} as complete`} onChange={() => toggleSub(s.id)} />
               <span className="grow">{s.title}</span>
             </li>
           ))}

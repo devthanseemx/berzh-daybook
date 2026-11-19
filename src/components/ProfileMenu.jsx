@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogOut } from 'lucide-react';
+import { BadgeCheck, ChevronRight, LogOut } from 'lucide-react';
 
 const initials = (s = '') =>
   s.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('') || '?';
@@ -49,24 +49,32 @@ export default function ProfileMenu({ user, onSignOut }) {
 
   return (
     <div className="profile" ref={ref}>
-      <button className="avatar-btn" onClick={() => setOpen(!open)} aria-label="Open profile menu" aria-expanded={open}>
+      <button className="avatar-btn" onClick={() => setOpen(!open)} aria-label={`Open profile menu for ${name}`} aria-expanded={open}>
         <Avatar src={photo} name={name} size={36} />
       </button>
 
       {open && (
-        <div className="profile-pop" role="menu">
-          <Avatar src={photo} name={name} size={64} />
-          <strong>{name}</strong>
-          <span className="muted">{user.email}</span>
-          {provider && <span className="tag">{provider === 'google' ? 'Google account' : 'Email account'}</span>}
+        <div className="profile-pop" role="menu" aria-label="Profile menu">
+          <div className="profile-identity">
+            <Avatar src={photo} name={name} size={48} />
+            <div className="profile-identity-copy">
+              <strong>{name}</strong>
+              <span>{user.email}</span>
+            </div>
+          </div>
+          <div className="profile-account">
+            <span className="profile-account-icon"><BadgeCheck size={16} /></span>
+            <div><small>ACCOUNT TYPE</small><span>{provider === 'google' ? 'Google account' : 'Email account'}</span></div>
+          </div>
           <button
             className="signout"
+            role="menuitem"
             onClick={() => {
               setOpen(false);
               onSignOut();
             }}
           >
-            <LogOut size={16} /> Sign out
+            <LogOut size={16} /><span>Sign out</span><ChevronRight size={15} />
           </button>
         </div>
       )}

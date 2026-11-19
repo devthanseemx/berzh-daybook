@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, CalendarDays, Check, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
+import { CalendarDays, Check, Eye, EyeOff, LockKeyhole, LogIn, Mail, UserPlus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { notify } from '../lib/notify';
 
@@ -155,7 +155,7 @@ else if (mode === 'signup') notify.success('Account created. If email confirmati
 
             <button type="submit" className="auth-submit" disabled={busy}>
               <span>{busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}</span>
-              {!busy && <ArrowRight size={18} />}
+              {!busy && (mode === 'signin' ? <LogIn size={18} /> : <UserPlus size={18} />)}
             </button>
           </form>
 

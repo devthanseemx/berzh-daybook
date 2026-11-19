@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Plus, Star, Trash2 } from 'lucide-react';
 import TimeWheel from './TimeWheel';
 import FilterBar from './FilterBar';
 import { notify } from '../lib/notify';
@@ -31,35 +32,37 @@ function TaskItem({ t, starred, saveTask, deleteTask, saveTemplate }) {
   return (
     <li className="task">
       <div className={`row ${t.done ? 'done' : ''}`}>
-        <input type="checkbox" checked={t.done} onChange={() => saveTask({ ...t, done: !t.done })} />
+        <input type="checkbox" checked={t.done} aria-label={`Mark ${t.title} as complete`} onChange={() => saveTask({ ...t, done: !t.done })} />
         <span className="row-date">{fmt12(t.start)} – {fmt12(t.end)}</span>
         <span className="row-title">{t.title}</span>
         {subs.length > 0 && (
           <span className="tag">{subs.filter((s) => s.done).length}/{subs.length}</span>
         )}
         <button
-          className="icon"
+          className="icon task-icon-button"
+          aria-label={starred ? 'Already saved' : 'Save as reusable task'}
           title={starred ? 'Already saved' : 'Save as reusable task'}
           disabled={starred}
           onClick={() => saveTemplate(t)}
         >
-          {starred ? '★' : '☆'}
+          <Star size={16} fill={starred ? 'currentColor' : 'none'} />
         </button>
-        <button className="icon" aria-label="Delete task" onClick={() => deleteTask(t.id)}>✕</button>
+        <button className="icon task-icon-button danger-button" aria-label="Delete task" onClick={() => deleteTask(t.id)}><Trash2 size={16} /></button>
       </div>
 
       <ul className="subs">
         {subs.map((s) => (
           <li key={s.id} className={s.done ? 'done' : ''}>
-            <input type="checkbox" checked={s.done} onChange={() => toggleSub(s.id)} />
+            <input type="checkbox" checked={s.done} aria-label={`Mark ${s.title} as complete`} onChange={() => toggleSub(s.id)} />
             <span className="grow">{s.title}</span>
-            <button className="icon" aria-label="Delete subtask" onClick={() => deleteSub(s.id)}>✕</button>
+            <button className="icon task-icon-button danger-button" aria-label="Delete subtask" onClick={() => deleteSub(s.id)}><Trash2 size={14} /></button>
           </li>
         ))}
       </ul>
 
       <form className="sub-form" onSubmit={addSub}>
         <input placeholder="+ Add subtask" value={sub} onChange={(e) => setSub(e.target.value)} />
+        <button className="subtask-add-button" type="submit" aria-label="Add subtask" disabled={!sub.trim()}><Plus size={15} /></button>
       </form>
     </li>
   );
@@ -91,7 +94,7 @@ export default function TaskPlanner({
     setEnd(addHour(end));
   };
 
-  const useTemplate = (tpl) =>
+  const addTemplateTask = (tpl) =>
     saveTask({
       id: crypto.randomUUID(),
       date,
@@ -114,7 +117,7 @@ export default function TaskPlanner({
         </div>
         <div className="task-form">
           <input className="grow" placeholder="What to do?" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <button type="submit" className="primary">Add</button>
+          <button type="submit" className="primary action-button"><Plus size={16} /> Add task</button>
         </div>
       </form>
 
@@ -153,8 +156,8 @@ export default function TaskPlanner({
                   {tpl.title}
                   {tpl.subtasks.length > 0 && <span className="muted"> · {tpl.subtasks.length} subtasks</span>}
                 </span>
-                <button onClick={() => useTemplate(tpl)}>+ Add to this day</button>
-                <button className="icon" aria-label="Remove saved task" onClick={() => deleteTemplate(tpl.id)}>✕</button>
+                <button className="action-button" onClick={() => addTemplateTask(tpl)}><Plus size={15} /> Add to this day</button>
+                <button className="icon task-icon-button danger-button" aria-label="Remove saved task" onClick={() => deleteTemplate(tpl.id)}><Trash2 size={15} /></button>
               </li>
             ))}
           </ul>

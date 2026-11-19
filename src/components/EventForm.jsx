@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { Check, X } from 'lucide-react';
 import Dropdown from './Dropdown';
+import { categoryTone } from '../utils/categoryTone';
 
-export const CATEGORIES = ['Job application', 'Interview', 'Meeting', 'Personal', 'Other'];
+const CATEGORIES = ['Job application', 'Interview', 'Meeting', 'Personal', 'Other'];
 
 export default function EventForm({ date, initial, onSave, onCancel }) {
   const [f, setF] = useState(
@@ -25,7 +27,7 @@ export default function EventForm({ date, initial, onSave, onCancel }) {
       <input placeholder="Event title (e.g. Applied to Acme Corp)" value={f.title} onChange={set('title')} required />
       <Dropdown
         ariaLabel="Event category"
-        className="event-category-dropdown"
+        className={`event-category-dropdown tone-${categoryTone(f.category)}`}
         value={f.category}
         onChange={setCategory}
         options={CATEGORIES.map((category) => ({ value: category, label: category }))}
@@ -44,8 +46,8 @@ export default function EventForm({ date, initial, onSave, onCancel }) {
       <textarea rows={2} placeholder="Notes / what happened" value={f.notes} onChange={set('notes')} />
 
       <div className="form-actions">
-        <button type="submit" className="primary">{initial ? 'Update event' : 'Save event'}</button>
-        <button type="button" onClick={onCancel}>Cancel</button>
+        <button type="submit" className="primary"><Check size={16} /> {initial ? 'Update event' : 'Save event'}</button>
+        <button type="button" onClick={onCancel}><X size={15} /> Cancel</button>
       </div>
     </form>
   );

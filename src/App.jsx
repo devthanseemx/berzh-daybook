@@ -47,10 +47,22 @@ function Main({ user }) {
 
   const saveTask = (t) => {
     const old = tasks.find((x) => x.id === t.id);
-    tk.save(t);
+    const oldSubtasks = old?.subtasks || [];
+    const nextSubtasks = t.subtasks || [];
+    const subtasksChanged = old && (
+      oldSubtasks.length !== nextSubtasks.length
+      || nextSubtasks.some((subtask) => {
+        const previous = oldSubtasks.find((item) => item.id === subtask.id);
+        return !previous || previous.done !== subtask.done;
+      })
+    );
+    const savedTask = subtasksChanged && nextSubtasks.length
+      ? { ...t, done: nextSubtasks.every((subtask) => subtask.done) }
+      : t;
+    tk.save(savedTask);
     if (!old) return notify.success('Task added');
-    if (old.done !== t.done) {
-      return t.done ? notify.success('Task completed') : notify.reopened('Task marked as pending');
+    if (old.done !== savedTask.done) {
+      return savedTask.done ? notify.success('Task completed') : notify.reopened('Task marked as pending');
     }
     const a = old.subtasks || [];
     const b = t.subtasks || [];
@@ -127,7 +139,7 @@ function Main({ user }) {
               <CalendarDays size={16} /> Calendar
             </button>
           </nav>
-          <button className="import-button" onClick={() => setShowIO(true)}>
+          <button className="import-button" aria-label="Import / Export" onClick={() => setShowIO(true)}>
             <Upload size={16} /> <span>Import / Export</span>
           </button>
           {user && <ProfileMenu user={user} onSignOut={signOut} />}
