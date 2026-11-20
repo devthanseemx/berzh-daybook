@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { pad } from '../utils/dates';
 
-const ITEM = 36; // px, must match .wheel-item height in the CSS
+const ITEM = 40; // px, must match .wheel-item height in the CSS
 const HOURS = Array.from({ length: 12 }, (_, i) => pad(i + 1));
 const MINUTES = Array.from({ length: 12 }, (_, i) => pad(i * 5));
 const AMPM = ['AM', 'PM'];

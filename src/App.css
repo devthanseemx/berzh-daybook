@@ -452,8 +452,11 @@ button.icon { border: none; background: none; color: var(--muted); }
   margin-top: 12px;
 }
 .event-row {
+  display: grid;
+  grid-template-columns: minmax(96px, max-content) minmax(72px, 1fr) minmax(0, auto) 30px;
+  align-items: center;
   min-height: 44px;
-  gap: 9px;
+  gap: 8px;
   padding: 7px 2px;
   border-bottom-color: #f0f1f5;
 }
@@ -461,19 +464,27 @@ button.icon { border: none; background: none; color: var(--muted); }
   border-bottom: 0;
 }
 .event-row .row-date {
+  width: 100%;
   min-width: 104px;
+  justify-content: flex-start;
   color: #7f8999;
-  font-size: 10px;
+  font-size: 11px;
+  white-space: nowrap;
 }
 .event-row .row-title {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
   overflow: hidden;
   color: #293348;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 550;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .event-row .tag {
+  min-width: 0;
+  justify-self: end;
   max-width: 125px;
   overflow: hidden;
   border-color: #e8eaf0;
@@ -557,12 +568,13 @@ button.icon { border: none; background: none; color: var(--muted); }
 .dashboard .task .row-date {
   min-width: 142px;
   color: #7f8999;
-  font-size: 10px;
+  font-size: 11px;
 }
 .dashboard .task .row-title {
+  min-width: 0;
   overflow: hidden;
   color: #293348;
-  font-size: 11px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -586,7 +598,7 @@ button.icon { border: none; background: none; color: var(--muted); }
 }
 .dashboard .subs li {
   color: #697386;
-  font-size: 10px;
+  font-size: 11px;
 }
 .dashboard .subs input[type="checkbox"] {
   width: 13px;
@@ -735,13 +747,16 @@ button.icon { border: none; background: none; color: var(--muted); }
     justify-content: flex-start;
   }
   .event-row {
-    display: grid;
-    grid-template-columns: 86px minmax(0, 1fr) auto auto;
+    grid-template-columns: 84px minmax(60px, 1fr) auto 28px;
     gap: 6px;
+  }
+  .event-row .row-date,
+  .event-row .row-title {
+    min-width: 0;
   }
   .event-row .row-date {
     min-width: 0;
-    font-size: 9px;
+    font-size: 10px;
   }
   .event-row .tag {
     max-width: 88px;
@@ -752,10 +767,10 @@ button.icon { border: none; background: none; color: var(--muted); }
   }
   .dashboard .task .row-date {
     min-width: 110px;
-    font-size: 9px;
+    font-size: 10px;
   }
   .dashboard .task .row-title {
-    font-size: 10px;
+    font-size: 11px;
   }
 }
 @media (max-width: 420px) {
@@ -2958,5 +2973,291 @@ button svg,
   .modal-body .action-button {
     padding: 7px 8px;
     font-size: 10px;
+  }
+}
+
+/* Clearer schedule rows and task-planning controls */
+.dashboard .grid-2 > .dashboard-card {
+  min-width: 0;
+}
+.dashboard .event-row {
+  grid-template-columns: minmax(104px, max-content) minmax(80px, 1fr) minmax(0, auto) 30px;
+}
+.dashboard .event-row .row-date,
+.dashboard .event-row .row-title {
+  min-width: 0;
+}
+.dashboard .event-row .row-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.day-time-card .time-plan-title {
+  margin-bottom: 16px;
+  color: #172033;
+  font-size: 17px;
+}
+.day-time-card .time-pick {
+  gap: 18px;
+  margin-bottom: 16px;
+}
+.day-time-card .wheel {
+  min-width: 0;
+}
+.day-time-card .wheel-label {
+  margin-bottom: 7px;
+  color: #596477;
+  font-size: 12px;
+  font-weight: 600;
+}
+.day-time-card .wheel-box {
+  min-height: 132px;
+  padding: 0 12px;
+  border-color: #e3e6ee;
+  border-radius: 12px;
+  background: #fbfcfe;
+}
+.day-time-card .wheel-col {
+  width: 52px;
+  height: 120px;
+  scroll-behavior: smooth;
+}
+.day-time-card .wheel-pad {
+  height: 40px;
+}
+.day-time-card .wheel-item {
+  height: 40px;
+  line-height: 40px;
+  color: #858e9d;
+  font-size: 13px;
+}
+.day-time-card .wheel-item.on {
+  color: #5145e5;
+  font-size: 16px;
+  font-weight: 700;
+}
+.day-time-card .wheel-colon {
+  padding: 0 2px;
+  color: #697386;
+  font-size: 15px;
+}
+.day-time-card .wheel-band {
+  top: 40px;
+  height: 40px;
+  border-top-color: #dedaff;
+  border-bottom-color: #dedaff;
+  border-radius: 4px;
+  background: rgba(81, 69, 229, 0.035);
+}
+.day-time-card .task-form input {
+  height: 44px;
+  min-height: 44px;
+  padding: 0 13px;
+  font-size: 14px;
+}
+.day-time-card .task-form input::placeholder {
+  color: #8992a1;
+}
+.day-time-card .task-form .action-button {
+  min-width: 124px;
+  height: 44px;
+  font-size: 13px;
+}
+.day-time-card .list {
+  margin-top: 16px;
+}
+.day-time-card .task {
+  padding: 7px 0;
+}
+.day-time-card .task > .row {
+  display: grid;
+  grid-template-columns: 18px minmax(120px, max-content) minmax(0, 1fr) auto 34px 34px;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 4px 0;
+}
+.day-time-card .task > .row > input[type="checkbox"],
+.day-time-card .subs input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #5145e5;
+}
+.day-time-card .task .row-date {
+  min-width: 0;
+  color: #697386;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.day-time-card .task .row-title {
+  min-width: 0;
+  overflow: hidden;
+  color: #293348;
+  font-size: 14px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.day-time-card .subs {
+  padding: 2px 0 4px;
+}
+.day-time-card .subs li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 3px 0;
+  color: #596477;
+  font-size: 13px;
+}
+.day-time-card .subs .grow {
+  min-width: 0;
+}
+.day-time-card .subs .task-icon-button {
+  width: 34px;
+  height: 32px;
+  justify-self: center;
+}
+.day-time-card .sub-form {
+  padding-left: 26px;
+  margin-top: 8px;
+}
+.day-time-card .sub-form input {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.day-time-card .subtask-add-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+}
+.day-time-card .section-head {
+  margin-top: 16px !important;
+}
+.day-time-card .section-head > .muted {
+  font-size: 12px;
+}
+.day-time-card .templates {
+  margin-top: 20px;
+}
+.day-time-card .templates summary {
+  min-height: 60px;
+}
+.day-time-card .templates summary strong {
+  font-size: 13px;
+}
+.day-time-card .templates summary small {
+  font-size: 11px;
+}
+.day-time-card .saved-task-card strong {
+  font-size: 13px;
+}
+.day-time-card .saved-task-card-time,
+.day-time-card .saved-task-subcount {
+  font-size: 11px;
+}
+.day-time-card .saved-task-card-actions .action-button {
+  min-height: 34px;
+  height: 34px;
+  font-size: 12px;
+}
+.day-events-card .card-head h3 {
+  font-size: 17px;
+}
+.day-events-card .event strong {
+  font-size: 14px;
+}
+.day-events-card .event p {
+  font-size: 13px;
+}
+.day-events-card .tag {
+  font-size: 11px;
+}
+.day-events-card .action-button {
+  font-size: 12px;
+}
+.day-panel .form input,
+.day-panel .form textarea {
+  border-radius: 10px;
+  font-size: 13px;
+}
+.day-panel .form input {
+  min-height: 42px;
+  padding: 9px 12px;
+}
+.day-panel .form textarea {
+  padding: 10px 12px;
+}
+.day-panel .form .dropdown-trigger {
+  min-height: 42px;
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .dashboard .event-row {
+    grid-template-columns: 78px minmax(48px, 1fr) minmax(0, auto) 28px;
+    gap: 5px;
+  }
+  .dashboard .event-row .row-date {
+    font-size: 10px;
+  }
+  .dashboard .event-row .row-title {
+    font-size: 11px;
+  }
+  .day-time-card .task > .row {
+    grid-template-columns: 18px minmax(100px, max-content) minmax(0, 1fr) auto 30px 30px;
+    gap: 6px;
+  }
+  .day-time-card .subs li {
+    grid-template-columns: 18px minmax(0, 1fr) 30px;
+  }
+  .day-time-card .subs .task-icon-button {
+    width: 30px;
+  }
+  .day-time-card .task .row-date {
+    font-size: 11px;
+  }
+  .day-time-card .task .row-title {
+    font-size: 13px;
+  }
+  .day-time-card .time-pick {
+    gap: 10px;
+  }
+  .day-time-card .wheel-col {
+    width: 46px;
+  }
+}
+@media (max-width: 420px) {
+  .dashboard .event-row {
+    grid-template-columns: 70px minmax(44px, 1fr) minmax(0, auto) 26px;
+    gap: 4px;
+  }
+  .dashboard .event-row .tag {
+    max-width: 74px;
+    padding: 2px 5px;
+    font-size: 8px;
+  }
+  .day-time-card .task > .row {
+    grid-template-columns: 18px minmax(88px, max-content) minmax(0, 1fr) auto 28px 28px;
+    gap: 4px;
+  }
+  .day-time-card .task-icon-button,
+  .day-time-card .subs .task-icon-button {
+    width: 28px;
+  }
+  .day-time-card .subs li {
+    grid-template-columns: 18px minmax(0, 1fr) 28px;
+  }
+  .day-time-card .time-pick {
+    gap: 8px;
+  }
+  .day-time-card .wheel-box {
+    padding: 0 7px;
+  }
+  .day-time-card .wheel-col {
+    width: 42px;
   }
 }
