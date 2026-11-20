@@ -1826,6 +1826,8 @@ button.icon { border: none; background: none; color: var(--muted); }
 .sub-form input {
   min-width: 0;
   flex: 1;
+  height: 36px;
+  border-radius: 10px;
 }
 .subtask-add-button {
   width: 32px;
@@ -2396,6 +2398,137 @@ button.icon { border: none; background: none; color: var(--muted); }
   min-width: 112px;
 }
 
+button,
+.action-button,
+.form-actions button,
+.confirm-actions button,
+.detail-actions button,
+.task-form button,
+.sub-form button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  line-height: 1;
+  text-align: center;
+  vertical-align: middle;
+}
+button svg,
+.action-button svg,
+.form-actions button svg,
+.confirm-actions button svg,
+.detail-actions button svg {
+  flex: 0 0 auto;
+  display: block;
+  margin: 0;
+  line-height: 1;
+}
+.sub-form input {
+  border-radius: 10px;
+}
+
+.templates {
+  margin-top: 16px;
+  border: 1px solid #e8eaf0;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+.templates summary {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  list-style: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+.templates summary::-webkit-details-marker {
+  display: none;
+}
+.saved-task-summary-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  color: #5145e5;
+  background: #f1efff;
+}
+.templates summary > span:nth-child(2) {
+  min-width: 0;
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  text-align: left;
+}
+.templates summary strong {
+  color: #293348;
+  font-size: 12px;
+}
+.templates summary small {
+  color: #8992a1;
+  font-size: 9px;
+  font-weight: 500;
+}
+.saved-task-chevron {
+  flex: 0 0 auto;
+  color: #8992a1;
+  transition: transform 150ms ease;
+}
+.templates[open] .saved-task-chevron {
+  transform: rotate(180deg);
+}
+.saved-task-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid #eef0f4;
+  background: #fafbfc;
+}
+.saved-task-card {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid #e8eaf0;
+  border-radius: 10px;
+  background: #fff;
+}
+.saved-task-card-time {
+  color: #8992a1;
+  font-size: 9px;
+  font-weight: 600;
+}
+.saved-task-card strong {
+  overflow: hidden;
+  color: #293348;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.saved-task-subcount {
+  color: #697386;
+  font-size: 9px;
+}
+.saved-task-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 3px;
+}
+.saved-task-card-actions .action-button {
+  min-height: 32px;
+  height: 32px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  font-size: 10px;
+}
+
 /* Confirmation and detail dialogs */
 .confirm-backdrop,
 .detail-backdrop {
@@ -2470,13 +2603,14 @@ button.icon { border: none; background: none; color: var(--muted); }
   gap: 8px;
 }
 .confirm-danger {
-  border-color: #d92d20;
-  color: #fff;
-  background: #d92d20;
+  border-color: #d92d20 !important;
+  color: #fff !important;
+  background: #d92d20 !important;
 }
 .confirm-danger:hover {
-  border-color: #b42318;
-  background: #b42318;
+  border-color: #b42318 !important;
+  color: #fff !important;
+  background: #b42318 !important;
 }
 .confirm-primary {
   border-color: #5145e5;
@@ -2744,6 +2878,9 @@ button.icon { border: none; background: none; color: var(--muted); }
   }
 }
 @media (max-width: 520px) {
+  .saved-task-grid {
+    grid-template-columns: 1fr;
+  }
   .calendar-toolbar {
     align-items: flex-start;
     flex-direction: column;

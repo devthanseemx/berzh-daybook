@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Star, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus, Star, Trash2 } from 'lucide-react';
 import TimeWheel from './TimeWheel';
 import FilterBar from './FilterBar';
 import { notify } from '../lib/notify';
@@ -157,8 +157,12 @@ export default function TaskPlanner({
       {sorted.length === 0 && <p className="muted">No time blocks for this day yet.</p>}
       {sorted.length > 0 && shown.length === 0 && <p className="muted">No tasks match this filter.</p>}
 
-      <details className="templates" open>
-        <summary>★ Saved tasks ({templates.length})</summary>
+      <details className="templates">
+        <summary>
+          <span className="saved-task-summary-icon"><Star size={15} /></span>
+          <span><strong>Saved tasks</strong><small>{templates.length} reusable task{templates.length === 1 ? '' : 's'}</small></span>
+          <ChevronDown className="saved-task-chevron" size={16} />
+        </summary>
         {templates.length === 0 ? (
           <div className="saved-tasks-empty">
             <span className="saved-tasks-empty-icon"><Star size={18} /></span>
@@ -168,19 +172,19 @@ export default function TaskPlanner({
             </div>
           </div>
         ) : (
-          <ul className="list">
+          <div className="saved-task-grid">
             {templates.map((tpl) => (
-              <li key={tpl.id} className="row nopointer">
-                <span className="row-date">{fmt12(tpl.start)} – {fmt12(tpl.end)}</span>
-                <span className="row-title">
-                  {tpl.title}
-                  {tpl.subtasks.length > 0 && <span className="muted"> · {tpl.subtasks.length} subtasks</span>}
-                </span>
-                <button className="action-button" onClick={() => addTemplateTask(tpl)}><Plus size={15} /> Add to this day</button>
-                <button className="icon task-icon-button danger-button" aria-label="Remove saved task" onClick={() => deleteTemplate(tpl.id)}><Trash2 size={15} /></button>
-              </li>
+              <article key={tpl.id} className="saved-task-card">
+                <div className="saved-task-card-time">{fmt12(tpl.start)} – {fmt12(tpl.end)}</div>
+                <strong>{tpl.title}</strong>
+                {tpl.subtasks.length > 0 && <span className="saved-task-subcount">{tpl.subtasks.length} subtasks</span>}
+                <div className="saved-task-card-actions">
+                  <button className="action-button" onClick={() => addTemplateTask(tpl)}><Plus size={15} /> Add</button>
+                  <button className="icon task-icon-button danger-button" aria-label="Remove saved task" onClick={() => deleteTemplate(tpl.id)}><Trash2 size={15} /></button>
+                </div>
+              </article>
             ))}
-          </ul>
+          </div>
         )}
       </details>
     </div>
