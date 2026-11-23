@@ -3,7 +3,7 @@ import { ChevronDown, Plus, Star, Trash2 } from 'lucide-react';
 import TimeWheel from './TimeWheel';
 import FilterBar from './FilterBar';
 import { notify } from '../lib/notify';
-import { fmt12, pad } from '../utils/dates';
+import { fmt12, getTaskDates, pad } from '../utils/dates';
 import { requestConfirmation } from '../lib/confirm';
 
 const addHour = (t) => {
@@ -64,6 +64,8 @@ function TaskItem({ t, starred, saveTask, deleteTask, saveTemplate }) {
         }}><Trash2 size={16} /></button>
       </div>
 
+      {t.description && <p className="task-description">{t.description}</p>}
+
       <ul className="subs">
         {subs.map((s) => (
           <li key={s.id} className={s.done ? 'done' : ''}>
@@ -83,7 +85,7 @@ function TaskItem({ t, starred, saveTask, deleteTask, saveTemplate }) {
 }
 
 export default function TaskPlanner({
-  date, tasks, templates, saveTask, deleteTask, saveTemplate, deleteTemplate,
+  date, tasks, templates, saveTask, saveTasks, deleteTask, saveTemplate, deleteTemplate,
 }) {
   const sorted = [...tasks].sort((a, b) => a.start.localeCompare(b.start));
   const lastEnd = snap5(sorted.length ? sorted[sorted.length - 1].end : '09:00');
@@ -91,6 +93,8 @@ export default function TaskPlanner({
   const [start, setStart] = useState(lastEnd);
   const [end, setEnd] = useState(addHour(lastEnd));
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [openTemplateId, setOpenTemplateId] = useState(null);
   const [status, setStatus] = useState('all');
   const [order, setOrder] = useState('asc');
 
@@ -102,25 +106,44 @@ export default function TaskPlanner({
     e.preventDefault();
     if (!title.trim()) return notify.warning('Enter a task name first');
     if (end <= start) return notify.warning('End time must be after the start time');
-    saveTask({ id: crypto.randomUUID(), date, start, end, title: title.trim(), done: false, subtasks: [] });
+    saveTask({
+      id: crypto.randomUUID(),
+      date,
+      start,
+      end,
+      title: title.trim(),
+      description: description.trim(),
+      done: false,
+      subtasks: [],
+    });
     setTitle('');
+    setDescription('');
     setStart(end); // next block starts where this one ended
     setEnd(addHour(end));
   };
 
-  const addTemplateTask = (tpl) =>
-    saveTask({
+  const addTemplateTasks = (tpl, range) => {
+    const dates = getTaskDates(range, date);
+    saveTasks(dates.map((taskDate) => ({
       id: crypto.randomUUID(),
-      date,
+      date: taskDate,
       start: tpl.start,
       end: tpl.end,
       title: tpl.title,
+      description: tpl.description || '',
       done: false,
       subtasks: tpl.subtasks.map((s) => ({ id: crypto.randomUUID(), title: s, done: false })),
-    });
+    })));
+    setOpenTemplateId(null);
+  };
 
   const isStarred = (t) =>
-    templates.some((x) => x.title === t.title && x.start === t.start && x.end === t.end);
+    templates.some((x) =>
+      x.title === t.title
+      && x.start === t.start
+      && x.end === t.end
+      && (x.description || '') === (t.description || '')
+    );
 
   return (
     <div>
@@ -130,7 +153,16 @@ export default function TaskPlanner({
           <TimeWheel label="End" value={end} onChange={setEnd} />
         </div>
         <div className="task-form">
-          <input className="grow" placeholder="What to do?" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <div className="task-form-fields">
+            <input className="grow" placeholder="What to do?" value={title} onChange={(e) => setTitle(e.target.value)} />
+            <textarea
+              className="task-description-input"
+              placeholder="Description (optional)"
+              rows={2}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
           <button type="submit" className="primary action-button"><Plus size={16} /> Add task</button>
         </div>
       </form>
@@ -177,11 +209,37 @@ export default function TaskPlanner({
               <article key={tpl.id} className="saved-task-card">
                 <div className="saved-task-card-time">{fmt12(tpl.start)} – {fmt12(tpl.end)}</div>
                 <strong>{tpl.title}</strong>
+                {tpl.description && <p className="saved-task-card-description">{tpl.description}</p>}
                 {tpl.subtasks.length > 0 && <span className="saved-task-subcount">{tpl.subtasks.length} subtasks</span>}
                 <div className="saved-task-card-actions">
-                  <button className="action-button" onClick={() => addTemplateTask(tpl)}><Plus size={15} /> Add</button>
+                  <button
+                    type="button"
+                    className="action-button"
+                    aria-expanded={openTemplateId === tpl.id}
+                    aria-controls={`saved-task-options-${tpl.id}`}
+                    onClick={() => setOpenTemplateId(openTemplateId === tpl.id ? null : tpl.id)}
+                  >
+                    <Plus size={15} /> Add to day <ChevronDown size={14} />
+                  </button>
                   <button className="icon task-icon-button danger-button" aria-label="Remove saved task" onClick={() => deleteTemplate(tpl.id)}><Trash2 size={15} /></button>
                 </div>
+                {openTemplateId === tpl.id && (
+                  <div className="saved-task-options" id={`saved-task-options-${tpl.id}`} role="group" aria-label={`Add ${tpl.title} to`}>
+                    {[
+                      ['selected', 'Selected day'],
+                      ['today', 'Today'],
+                      ['tomorrow', 'Tomorrow'],
+                      ['next7', 'Next 7 days (rolling)'],
+                      ['nextWeek', 'Next week (Mon–Sun)'],
+                      ['nextMonth', 'Next calendar month'],
+                      ['nextYear', 'Next year (Jan–Dec)'],
+                    ].map(([range, label]) => (
+                      <button key={range} type="button" onClick={() => addTemplateTasks(tpl, range)}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </article>
             ))}
           </div>

@@ -17,10 +17,12 @@ export const FIELDS = [
   ['events', 'company, jobTitle, salary, description, nextSteps, notes', 'optional', 'text'],
   ['tasks', 'date', 'required', 'YYYY-MM-DD'],
   ['tasks', 'title', 'required', 'text'],
+  ['tasks', 'description', 'optional', 'text'],
   ['tasks', 'start, end', 'required', '24-hour "HH:MM", e.g. "14:30". end must be later than start'],
   ['tasks', 'done', 'optional', 'true or false (default false)'],
   ['tasks', 'subtasks', 'optional', 'list of text, or list of { "title": "...", "done": true/false }'],
   ['templates', 'title', 'required', 'text'],
+  ['templates', 'description', 'optional', 'text'],
   ['templates', 'start, end', 'required', '24-hour "HH:MM"'],
   ['templates', 'subtasks', 'optional', 'list of text'],
 ];
@@ -114,6 +116,7 @@ export function parseImport(text) {
     if (t.end <= t.start) return errors.push(`${p}: "end" must be later than "start"`);
     out.tasks.push({
       id: uid(), date: t.date, start: t.start, end: t.end, title: str(t.title),
+      description: str(t.description),
       done: Boolean(t.done), subtasks: subs(t.subtasks, p),
     });
   });
@@ -126,6 +129,7 @@ export function parseImport(text) {
       return errors.push(`${p}: "start" and "end" must be 24-hour HH:MM`);
     out.templates.push({
       id: uid(), title: str(t.title), start: t.start, end: t.end,
+      description: str(t.description),
       subtasks: subs(t.subtasks, p).map((s) => s.title),
     });
   });

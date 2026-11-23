@@ -31,6 +31,12 @@ export default function DetailModal({ detail, onClose, onEdit, onOpenCalendar, o
 
           {isTask ? (
             <>
+              {item.description && (
+                <div className="detail-section">
+                  <h3>Description</h3>
+                  <p className="detail-task-description">{item.description}</p>
+                </div>
+              )}
               <div className="detail-section">
                 <h3>Subtasks</h3>
                 {item.subtasks?.length ? (

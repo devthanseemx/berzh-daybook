@@ -97,13 +97,25 @@ function Main({ user }) {
     notify.deleted('Task deleted');
   };
 
+  const saveTasks = (items) => {
+    if (!items.length) return;
+    tk.saveMany(items);
+    notify.success(items.length === 1 ? 'Saved task added' : `Saved task added to ${items.length} days`);
+  };
+
   const saveTemplate = (t) => {
-    if (templates.some((x) => x.title === t.title && x.start === t.start && x.end === t.end)) {
+    if (templates.some((x) =>
+      x.title === t.title
+      && x.start === t.start
+      && x.end === t.end
+      && (x.description || '') === (t.description || '')
+    )) {
       return notify.info('Already in your saved tasks');
     }
     tp.save({
       id: crypto.randomUUID(),
       title: t.title,
+      description: t.description || '',
       start: t.start,
       end: t.end,
       subtasks: (t.subtasks || []).map((s) => s.title),
@@ -200,6 +212,7 @@ function Main({ user }) {
             saveEvent={saveEvent}
             deleteEvent={deleteEvent}
             saveTask={saveTask}
+            saveTasks={saveTasks}
             deleteTask={deleteTask}
             saveTemplate={saveTemplate}
             deleteTemplate={deleteTemplate}

@@ -8,7 +8,7 @@ import { requestConfirmation } from '../lib/confirm';
 
 export default function DayPanel({
   date, events, tasks, templates, initialEditId,
-  saveEvent, deleteEvent, saveTask, deleteTask, saveTemplate, deleteTemplate, onEditingDone,
+  saveEvent, deleteEvent, saveTask, saveTasks, deleteTask, saveTemplate, deleteTemplate, onEditingDone,
 }) {
   const [editing, setEditing] = useState(null); // null | 'new' | event object
   const isPast = date < todayKey();
@@ -88,6 +88,7 @@ export default function DayPanel({
   tasks={tasks}
   templates={templates}
   saveTask={saveTask}
+  saveTasks={saveTasks}
   deleteTask={deleteTask}
   saveTemplate={saveTemplate}
   deleteTemplate={deleteTemplate}

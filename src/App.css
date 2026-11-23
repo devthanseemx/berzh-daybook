@@ -3261,3 +3261,107 @@ button svg,
     width: 42px;
   }
 }
+
+.day-time-card .task-form {
+  align-items: stretch;
+}
+.day-time-card .task-form-fields {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+.day-time-card .task-form-fields .grow {
+  width: 100%;
+  min-width: 0;
+}
+.day-time-card .task-description-input {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 13px;
+  resize: vertical;
+  border: 1px solid #e3e6ee;
+  border-radius: 10px;
+  background: #fff;
+  color: #293348;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.day-time-card .task-description-input:focus {
+  border-color: #9b93f4;
+  outline: 3px solid rgba(81, 69, 229, 0.1);
+}
+.day-time-card .task-description-input::placeholder {
+  color: #8992a1;
+}
+.day-time-card .task-description {
+  margin: 0 42px 6px 26px;
+  color: #697386;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.day-time-card .saved-task-card-description {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #697386;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.day-time-card .saved-task-card-actions .action-button {
+  min-width: 0;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+.day-time-card .saved-task-options {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  padding-top: 8px;
+  border-top: 1px solid #eef0f4;
+}
+.day-time-card .saved-task-options button {
+  min-width: 0;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 1px solid #e8eaf0;
+  border-radius: 8px;
+  background: #fbfcfe;
+  color: #4b5567;
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+}
+.day-time-card .saved-task-options button:hover {
+  border-color: #c9c4fc;
+  background: #f6f5ff;
+  color: #5145e5;
+}
+.detail-task-description {
+  margin: 0;
+  color: #596477;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .day-time-card .task-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .day-time-card .task-form .action-button {
+    width: 100%;
+  }
+  .day-time-card .task-description {
+    margin-right: 36px;
+  }
+}

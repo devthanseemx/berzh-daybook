@@ -5,6 +5,38 @@ export const fromKey = (k) => {
   const [y, m, d] = k.split('-').map(Number);
   return new Date(y, m - 1, d);
 };
+export const getTaskDates = (range, selectedKey, now = new Date()) => {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const shift = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+  let start;
+  let end;
+
+  if (range === 'selected') {
+    start = end = fromKey(selectedKey);
+  } else if (range === 'today') {
+    start = end = today;
+  } else if (range === 'tomorrow') {
+    start = end = shift(today, 1);
+  } else if (range === 'next7') {
+    start = today;
+    end = shift(today, 6);
+  } else if (range === 'nextWeek') {
+    start = shift(today, 8 - (today.getDay() || 7));
+    end = shift(start, 6);
+  } else if (range === 'nextMonth') {
+    start = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    end = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+  } else if (range === 'nextYear') {
+    start = new Date(today.getFullYear() + 1, 0, 1);
+    end = new Date(today.getFullYear() + 2, 0, 0);
+  } else {
+    throw new Error(`Unknown task date range: ${range}`);
+  }
+
+  const dates = [];
+  for (let date = start; date <= end; date = shift(date, 1)) dates.push(toKey(date));
+  return dates;
+};
 export const prettyDate = (k) =>
   fromKey(k).toLocaleDateString(undefined, {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
