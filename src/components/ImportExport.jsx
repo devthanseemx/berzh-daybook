@@ -86,6 +86,10 @@ export default function ImportExport({ events, tasks, templates, onImport, onClo
             All three lists are optional. Times are 24-hour <code>HH:MM</code> in the JSON; the app shows them as 12-hour.
             Importing adds items; it never replaces or merges existing ones.
           </p>
+          <p className="muted">
+            Task descriptions and saved-template descriptions are included in backups. Tasks added across a date range
+            are stored as one task per date, so every day is included in the export and restored by import.
+          </p>
           <div className="fields-wrap">
             <table className="fields">
               <thead><tr><th>List</th><th>Field</th><th></th><th>Format</th></tr></thead>

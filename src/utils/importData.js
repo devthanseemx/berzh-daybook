@@ -48,13 +48,29 @@ export const EXAMPLE = {
       start: '09:00',
       end: '10:30',
       title: 'Prepare for interview',
+      description: 'Review the role and practice a few questions.',
+      done: false,
+      subtasks: [{ title: 'Review React hooks', done: false }, 'Practice common questions'],
+    },
+    {
+      date: '2026-12-03',
+      start: '09:00',
+      end: '10:30',
+      title: 'Prepare for interview',
+      description: 'Review the role and practice a few questions.',
       done: false,
       subtasks: [{ title: 'Review React hooks', done: false }, 'Practice common questions'],
     },
     { date: '2026-12-02', start: '14:00', end: '15:00', title: 'Gym' },
   ],
   templates: [
-    { title: 'Morning routine', start: '06:30', end: '07:15', subtasks: ['Stretch', 'Plan the day'] },
+    {
+      title: 'Morning routine',
+      description: 'Start the day feeling focused.',
+      start: '06:30',
+      end: '07:15',
+      subtasks: ['Stretch', 'Plan the day'],
+    },
   ],
 };
 
