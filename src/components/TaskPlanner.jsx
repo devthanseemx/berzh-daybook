@@ -16,7 +16,7 @@ const snap5 = (t) => {
   return `${pad(h)}:${pad(Math.min(55, Math.round(m / 5) * 5))}`;
 };
 
-function TaskItem({ t, starred, saveTask, deleteTask, saveTemplate }) {
+function TaskItem({ t, starred, selected, onToggleSelect, saveTask, deleteTask, saveTemplate }) {
   const [sub, setSub] = useState('');
   const subs = t.subtasks || [];
 
@@ -40,6 +40,12 @@ function TaskItem({ t, starred, saveTask, deleteTask, saveTemplate }) {
   return (
     <li className="task">
       <div className={`row ${t.done ? 'done' : ''}`}>
+        <input
+          type="checkbox"
+          checked={selected}
+          aria-label={`Select task ${t.title}`}
+          onChange={() => onToggleSelect(t.id)}
+        />
         <input type="checkbox" checked={t.done} aria-label={`Mark ${t.title} as complete`} onChange={() => saveTask({ ...t, done: !t.done })} />
         <span className="row-date">{fmt12(t.start)} – {fmt12(t.end)}</span>
         <span className="row-title">{t.title}</span>
@@ -86,6 +92,7 @@ function TaskItem({ t, starred, saveTask, deleteTask, saveTemplate }) {
 
 export default function TaskPlanner({
   date, tasks, templates, saveTask, saveTasks, deleteTask, saveTemplate, deleteTemplate,
+  updateTemplate, onRequestBulkDelete,
 }) {
   const sorted = [...tasks].sort((a, b) => a.start.localeCompare(b.start));
   const lastEnd = snap5(sorted.length ? sorted[sorted.length - 1].end : '09:00');
@@ -95,12 +102,24 @@ export default function TaskPlanner({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [openTemplateId, setOpenTemplateId] = useState(null);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [selectedTaskIds, setSelectedTaskIds] = useState([]);
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState([]);
   const [status, setStatus] = useState('all');
   const [order, setOrder] = useState('asc');
 
   const shown = sorted
     .filter((t) => status === 'all' || (status === 'done' ? t.done : !t.done))
     .sort((a, b) => (order === 'asc' ? a.start.localeCompare(b.start) : b.start.localeCompare(a.start)));
+  const toggleSelection = (setIds, id) => setIds((current) =>
+    current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
+  );
+  const toggleAllSelection = (setIds, items, selectedIds) => {
+    const ids = items.map((item) => item.id);
+    setIds(ids.every((id) => selectedIds.includes(id))
+      ? selectedIds.filter((id) => !ids.includes(id))
+      : [...new Set([...selectedIds, ...ids])]);
+  };
 
   const add = (e) => {
     e.preventDefault();
@@ -180,12 +199,29 @@ export default function TaskPlanner({
             key={t.id}
             t={t}
             starred={isStarred(t)}
+            selected={selectedTaskIds.includes(t.id)}
+            onToggleSelect={(id) => toggleSelection(setSelectedTaskIds, id)}
             saveTask={saveTask}
             deleteTask={deleteTask}
             saveTemplate={saveTemplate}
           />
         ))}
       </ul>
+      {shown.length > 0 && (
+        <div className="bulk-actions planner-bulk-actions">
+          <button className="bulk-select-all" onClick={() => toggleAllSelection(setSelectedTaskIds, shown, selectedTaskIds)}>
+            {shown.every((task) => selectedTaskIds.includes(task.id)) ? 'Clear selection' : 'Select visible'}
+          </button>
+          {shown.some((task) => selectedTaskIds.includes(task.id)) && (
+            <button
+              className="action-button danger-button"
+              onClick={() => onRequestBulkDelete('task', shown.filter((task) => selectedTaskIds.includes(task.id)))}
+            >
+              <Trash2 size={14} /> Delete selected ({shown.filter((task) => selectedTaskIds.includes(task.id)).length})
+            </button>
+          )}
+        </div>
+      )}
       {sorted.length === 0 && <p className="muted">No time blocks for this day yet.</p>}
       {sorted.length > 0 && shown.length === 0 && <p className="muted">No tasks match this filter.</p>}
 
@@ -204,45 +240,173 @@ export default function TaskPlanner({
             </div>
           </div>
         ) : (
-          <div className="saved-task-grid">
-            {templates.map((tpl) => (
-              <article key={tpl.id} className="saved-task-card">
-                <div className="saved-task-card-time">{fmt12(tpl.start)} – {fmt12(tpl.end)}</div>
-                <strong>{tpl.title}</strong>
-                {tpl.description && <p className="saved-task-card-description">{tpl.description}</p>}
-                {tpl.subtasks.length > 0 && <span className="saved-task-subcount">{tpl.subtasks.length} subtasks</span>}
-                <div className="saved-task-card-actions">
-                  <button
-                    type="button"
-                    className="action-button"
-                    aria-expanded={openTemplateId === tpl.id}
-                    aria-controls={`saved-task-options-${tpl.id}`}
-                    onClick={() => setOpenTemplateId(openTemplateId === tpl.id ? null : tpl.id)}
-                  >
-                    <Plus size={15} /> Add to day <ChevronDown size={14} />
-                  </button>
-                  <button className="icon task-icon-button danger-button" aria-label="Remove saved task" onClick={() => deleteTemplate(tpl.id)}><Trash2 size={15} /></button>
-                </div>
-                {openTemplateId === tpl.id && (
-                  <div className="saved-task-options" id={`saved-task-options-${tpl.id}`} role="group" aria-label={`Add ${tpl.title} to`}>
-                    {[
-                      ['selected', 'Selected day'],
-                      ['today', 'Today'],
-                      ['tomorrow', 'Tomorrow'],
-                      ['next7', 'Next 7 days (rolling)'],
-                      ['nextWeek', 'Next week (Mon–Sun)'],
-                      ['nextMonth', 'Next calendar month'],
-                      ['nextYear', 'Next year (Jan–Dec)'],
-                    ].map(([range, label]) => (
-                      <button key={range} type="button" onClick={() => addTemplateTasks(tpl, range)}>
-                        {label}
-                      </button>
-                    ))}
+          <>
+            <div className="saved-template-toolbar bulk-actions">
+              <button className="bulk-select-all" onClick={() => toggleAllSelection(setSelectedTemplateIds, templates, selectedTemplateIds)}>
+                {templates.every((template) => selectedTemplateIds.includes(template.id)) ? 'Clear selection' : 'Select all'}
+              </button>
+              {templates.some((template) => selectedTemplateIds.includes(template.id)) && (
+                <button
+                  className="action-button danger-button"
+                  onClick={() => onRequestBulkDelete('template', templates.filter((template) => selectedTemplateIds.includes(template.id)))}
+                >
+                  <Trash2 size={14} /> Delete selected ({templates.filter((template) => selectedTemplateIds.includes(template.id)).length})
+                </button>
+              )}
+            </div>
+            <div className="saved-task-grid">
+              {templates.map((tpl) => (
+                <article key={tpl.id} className="saved-task-card">
+                  <label className="saved-task-select">
+                    <input
+                      type="checkbox"
+                      checked={selectedTemplateIds.includes(tpl.id)}
+                      aria-label={`Select saved task ${tpl.title}`}
+                      onChange={() => toggleSelection(setSelectedTemplateIds, tpl.id)}
+                    />
+                    <span>Select</span>
+                  </label>
+                  <div className="saved-task-card-time">{fmt12(tpl.start)} – {fmt12(tpl.end)}</div>
+                  <strong>{tpl.title}</strong>
+                  {tpl.description && <p className="saved-task-card-description">{tpl.description}</p>}
+                  {tpl.subtasks?.length > 0 && <span className="saved-task-subcount">{tpl.subtasks.length} subtasks</span>}
+                  <div className="saved-task-card-actions">
+                    <button
+                      type="button"
+                      className="action-button"
+                      onClick={() => {
+                        setEditingTemplate({
+                          ...tpl,
+                          title: tpl.title,
+                          description: tpl.description || '',
+                          subtasks: (tpl.subtasks || []).map((subtask) => ({ title: subtask })),
+                        });
+                        setOpenTemplateId(null);
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="action-button"
+                      aria-expanded={openTemplateId === tpl.id}
+                      aria-controls={`saved-task-options-${tpl.id}`}
+                      onClick={() => setOpenTemplateId(openTemplateId === tpl.id ? null : tpl.id)}
+                    >
+                      <Plus size={15} /> Add to day <ChevronDown size={14} />
+                    </button>
+                    <button
+                      className="icon task-icon-button danger-button"
+                      aria-label="Remove saved task"
+                      onClick={async () => {
+                        const confirmed = await requestConfirmation({
+                          title: 'Delete saved task?',
+                          message: `Delete "${tpl.title}" from saved tasks? This cannot be undone.`,
+                        });
+                        if (confirmed) deleteTemplate(tpl.id);
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
                   </div>
-                )}
-              </article>
-            ))}
-          </div>
+                  {openTemplateId === tpl.id && (
+                    <div className="saved-task-options" id={`saved-task-options-${tpl.id}`} role="group" aria-label={`Add ${tpl.title} to`}>
+                      {[
+                        ['selected', 'Selected day'],
+                        ['today', 'Today'],
+                        ['tomorrow', 'Tomorrow'],
+                        ['next7', 'Next 7 days (rolling)'],
+                        ['nextWeek', 'Next week (Mon–Sun)'],
+                        ['nextMonth', 'Next calendar month'],
+                        ['nextYear', 'Next year (Jan–Dec)'],
+                      ].map(([range, label]) => (
+                        <button key={range} type="button" onClick={() => addTemplateTasks(tpl, range)}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {editingTemplate?.id === tpl.id && (
+                    <form
+                      className="saved-template-editor"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        const titleValue = editingTemplate.title.trim();
+                        if (!titleValue) return notify.warning('Enter a saved task name first');
+                        updateTemplate({
+                          ...tpl,
+                          title: titleValue,
+                          description: editingTemplate.description.trim(),
+                          subtasks: editingTemplate.subtasks
+                            .map((subtask) => subtask.title.trim())
+                            .filter(Boolean),
+                        });
+                        setEditingTemplate(null);
+                      }}
+                    >
+                      <label>
+                        <span>Task title</span>
+                        <input
+                          value={editingTemplate.title}
+                          onChange={(event) => setEditingTemplate({ ...editingTemplate, title: event.target.value })}
+                        />
+                      </label>
+                      <label>
+                        <span>Description</span>
+                        <textarea
+                          rows={2}
+                          value={editingTemplate.description}
+                          onChange={(event) => setEditingTemplate({ ...editingTemplate, description: event.target.value })}
+                        />
+                      </label>
+                      <div className="saved-template-subtasks">
+                        <span>Subtasks</span>
+                        {editingTemplate.subtasks.map((subtask, index) => (
+                          <div className="saved-template-subtask" key={`${tpl.id}-sub-${index}`}>
+                            <input
+                              aria-label={`Subtask ${index + 1}`}
+                              value={subtask.title}
+                              onChange={(event) => setEditingTemplate({
+                                ...editingTemplate,
+                                subtasks: editingTemplate.subtasks.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, title: event.target.value } : item
+                                ),
+                              })}
+                            />
+                            <button
+                              type="button"
+                              className="icon task-icon-button danger-button"
+                              aria-label={`Delete subtask ${subtask.title || index + 1}`}
+                              onClick={() => setEditingTemplate({
+                                ...editingTemplate,
+                                subtasks: editingTemplate.subtasks.filter((_, itemIndex) => itemIndex !== index),
+                              })}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          className="bulk-select-all"
+                          onClick={() => setEditingTemplate({
+                            ...editingTemplate,
+                            subtasks: [...editingTemplate.subtasks, { title: '' }],
+                          })}
+                        >
+                          <Plus size={14} /> Add subtask
+                        </button>
+                      </div>
+                      <div className="saved-template-editor-actions">
+                        <button type="button" className="action-button" onClick={() => setEditingTemplate(null)}>Cancel</button>
+                        <button type="submit" className="action-button primary">Save changes</button>
+                      </div>
+                    </form>
+                  )}
+                </article>
+              ))}
+            </div>
+          </>
         )}
       </details>
     </div>

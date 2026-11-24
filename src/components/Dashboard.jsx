@@ -23,9 +23,16 @@ function MoreButtons({ limit, total, setLimit }) {
   );
 }
 
-function EventRow({ ev, onView, onRequestDelete }) {
+function EventRow({ ev, onView, onRequestDelete, selected, onToggleSelect }) {
   return (
     <li className="row event-row nopointer">
+      <input
+        className="bulk-select"
+        type="checkbox"
+        checked={selected}
+        aria-label={`Select event ${ev.title}`}
+        onChange={() => onToggleSelect(ev.id)}
+      />
       <button type="button" className="row-date link-ish row-detail-button" onClick={() => onView(ev)}>{shortDate(ev.date)}</button>
       <button type="button" className="row-title link-ish row-detail-button" onClick={() => onView(ev)}>{ev.title}</button>
       <span className={`tag category-tag tone-${categoryTone(ev.category)}`}>{ev.category}</span>
@@ -40,7 +47,7 @@ function EventRow({ ev, onView, onRequestDelete }) {
   );
 }
 
-function TaskLine({ t, saveTask, onRequestDelete, onView, showDate }) {
+function TaskLine({ t, saveTask, onRequestDelete, onView, showDate, selected, onToggleSelect }) {
   const [open, setOpen] = useState(true);
   const subs = t.subtasks || [];
   const toggleSub = (id) =>
@@ -49,6 +56,15 @@ function TaskLine({ t, saveTask, onRequestDelete, onView, showDate }) {
   return (
     <li className="task">
       <div className={`row nopointer ${t.done ? 'done' : ''}`}>
+        {onToggleSelect ? (
+          <input
+            className="bulk-select"
+            type="checkbox"
+            checked={selected}
+            aria-label={`Select task ${t.title}`}
+            onChange={() => onToggleSelect(t.id)}
+          />
+        ) : <span className="bulk-select-placeholder" aria-hidden="true" />}
         <input type="checkbox" checked={t.done} aria-label={`Mark ${t.title} as complete`} onChange={() => saveTask({ ...t, done: !t.done })} />
         <button type="button" className="row-date task-time link-ish row-detail-button" onClick={() => onView(t)}>
           {showDate ? `${shortDate(t.date)} · ` : ''}{fmt12(t.start)} – {fmt12(t.end)}
@@ -104,7 +120,10 @@ function UpcomingTaskRow({ task, onView, saveTask }) {
   );
 }
 
-export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, deleteTask, onViewTask, onViewEvent, onRequestDelete }) {
+export default function Dashboard({
+  name, events, tasks, onOpenDay, saveTask, deleteTask, onViewTask, onViewEvent,
+  onRequestDelete, onRequestBulkDelete,
+}) {
   const today = todayKey();
   const [upLimit, setUpLimit] = useState(STEP);
   const [recLimit, setRecLimit] = useState(STEP);
@@ -112,6 +131,18 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
   const [range, setRange] = useState('upcoming');
   const [status, setStatus] = useState('all');
   const [order, setOrder] = useState('asc');
+  const [selectedEventIds, setSelectedEventIds] = useState([]);
+  const [selectedTaskIds, setSelectedTaskIds] = useState([]);
+
+  const toggleSelected = (setIds, id) => setIds((current) =>
+    current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
+  );
+  const toggleAllSelected = (setIds, items, selectedIds) => {
+    const ids = items.map((item) => item.id);
+    setIds(ids.every((id) => selectedIds.includes(id))
+      ? selectedIds.filter((id) => !ids.includes(id))
+      : [...new Set([...selectedIds, ...ids])]);
+  };
 
   const hour = new Date().getHours();
   const hello = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -137,6 +168,7 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
   });
   const allDays = Object.keys(groups); // already in sorted order
   const days = allDays.slice(0, dayLimit);
+  const visibleScheduleTasks = days.flatMap((day) => groups[day]);
 
   const missed = tasks
     .filter((t) => t.date < today && !t.done)
@@ -230,9 +262,26 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
             <div className="dashboard-empty"><CalendarDays size={19} /><p>Nothing coming up. Add an event from your calendar.</p></div>
           ) : (
             <>
+              <div className="bulk-actions">
+                <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedEventIds, upcomingAll.slice(0, upLimit), selectedEventIds)}>
+                  {upcomingAll.slice(0, upLimit).every((item) => selectedEventIds.includes(item.id)) ? 'Clear selection' : 'Select visible'}
+                </button>
+                {upcomingAll.some((item) => selectedEventIds.includes(item.id)) && (
+                  <button className="action-button danger-button" onClick={() => onRequestBulkDelete('event', upcomingAll.filter((item) => selectedEventIds.includes(item.id)))}>
+                    <Trash2 size={14} /> Delete selected ({upcomingAll.filter((item) => selectedEventIds.includes(item.id)).length})
+                  </button>
+                )}
+              </div>
               <ul className="list">
                 {upcomingAll.slice(0, upLimit).map((e) => (
-                  <EventRow key={e.id} ev={e} onView={(item) => onViewEvent(item)} onRequestDelete={(item) => onRequestDelete({ type: 'event', item })} />
+                  <EventRow
+                    key={e.id}
+                    ev={e}
+                    selected={selectedEventIds.includes(e.id)}
+                    onToggleSelect={(id) => toggleSelected(setSelectedEventIds, id)}
+                    onView={(item) => onViewEvent(item)}
+                    onRequestDelete={(item) => onRequestDelete({ type: 'event', item })}
+                  />
                 ))}
               </ul>
               <MoreButtons limit={upLimit} total={upcomingAll.length} setLimit={setUpLimit} />
@@ -250,9 +299,26 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
             <div className="dashboard-empty"><BriefcaseBusiness size={19} /><p>No past events logged yet.</p></div>
           ) : (
             <>
+              <div className="bulk-actions">
+                <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedEventIds, recentAll.slice(0, recLimit), selectedEventIds)}>
+                  {recentAll.slice(0, recLimit).every((item) => selectedEventIds.includes(item.id)) ? 'Clear selection' : 'Select visible'}
+                </button>
+                {recentAll.some((item) => selectedEventIds.includes(item.id)) && (
+                  <button className="action-button danger-button" onClick={() => onRequestBulkDelete('event', recentAll.filter((item) => selectedEventIds.includes(item.id)))}>
+                    <Trash2 size={14} /> Delete selected ({recentAll.filter((item) => selectedEventIds.includes(item.id)).length})
+                  </button>
+                )}
+              </div>
               <ul className="list">
                 {recentAll.slice(0, recLimit).map((e) => (
-                  <EventRow key={e.id} ev={e} onView={(item) => onViewEvent(item)} onRequestDelete={(item) => onRequestDelete({ type: 'event', item })} />
+                  <EventRow
+                    key={e.id}
+                    ev={e}
+                    selected={selectedEventIds.includes(e.id)}
+                    onToggleSelect={(id) => toggleSelected(setSelectedEventIds, id)}
+                    onView={(item) => onViewEvent(item)}
+                    onRequestDelete={(item) => onRequestDelete({ type: 'event', item })}
+                  />
                 ))}
               </ul>
               <MoreButtons limit={recLimit} total={recentAll.length} setLimit={setRecLimit} />
@@ -278,14 +344,34 @@ export default function Dashboard({ name, events, tasks, onOpenDay, saveTask, de
         {days.length === 0 ? (
           <div className="dashboard-empty"><Clock3 size={19} /><p>No time blocks match this filter.</p></div>
         ) : (
-          days.map((d) => (
+          <>
+            <div className="bulk-actions schedule-bulk-actions">
+              <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedTaskIds, visibleScheduleTasks, selectedTaskIds)}>
+                {visibleScheduleTasks.length > 0 && visibleScheduleTasks.every((item) => selectedTaskIds.includes(item.id)) ? 'Clear selection' : 'Select visible'}
+              </button>
+              {visibleScheduleTasks.some((item) => selectedTaskIds.includes(item.id)) && (
+                <button className="action-button danger-button" onClick={() => onRequestBulkDelete('task', visibleScheduleTasks.filter((item) => selectedTaskIds.includes(item.id)))}>
+                  <Trash2 size={14} /> Delete selected ({visibleScheduleTasks.filter((item) => selectedTaskIds.includes(item.id)).length})
+                </button>
+              )}
+            </div>
+            {days.map((d) => (
             <div key={d} className="day-group">
               <h4 className="day-head">{d === today ? 'Today · ' : ''}{prettyDate(d)}</h4>
               <ul className="list">
-                {groups[d].map((t) => <TaskLine key={t.id} t={t} {...lineProps} />)}
+                {groups[d].map((t) => (
+                  <TaskLine
+                    key={t.id}
+                    t={t}
+                    {...lineProps}
+                    selected={selectedTaskIds.includes(t.id)}
+                    onToggleSelect={(id) => toggleSelected(setSelectedTaskIds, id)}
+                  />
+                ))}
               </ul>
             </div>
-          ))
+            ))}
+          </>
         )}
         <MoreButtons limit={dayLimit} total={allDays.length} setLimit={setDayLimit} />
       </section>

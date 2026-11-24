@@ -56,6 +56,11 @@ function Main({ user }) {
     notify.deleted('Event deleted');
   };
 
+  const deleteEvents = (ids) => {
+    ev.removeMany(ids);
+    notify.deleted(`${ids.length} event${ids.length === 1 ? '' : 's'} deleted`);
+  };
+
   const saveTask = (t) => {
     const old = tasks.find((x) => x.id === t.id);
     const oldSubtasks = old?.subtasks || [];
@@ -97,6 +102,11 @@ function Main({ user }) {
     notify.deleted('Task deleted');
   };
 
+  const deleteTasks = (ids) => {
+    tk.removeMany(ids);
+    notify.deleted(`${ids.length} task${ids.length === 1 ? '' : 's'} deleted`);
+  };
+
   const saveTasks = (items) => {
     if (!items.length) return;
     tk.saveMany(items);
@@ -126,6 +136,36 @@ function Main({ user }) {
   const deleteTemplate = (id) => {
     tp.remove(id);
     notify.deleted('Removed from saved tasks');
+  };
+
+  const updateTemplate = (template) => {
+    tp.save(template);
+    notify.success('Saved task updated');
+  };
+
+  const deleteTemplates = (ids) => {
+    tp.removeMany(ids);
+    notify.deleted(`${ids.length} saved task${ids.length === 1 ? '' : 's'} deleted`);
+  };
+
+  const requestBulkDelete = (type, items) => {
+    if (!items.length) return;
+    const ids = items.map((item) => item.id);
+    const label = type === 'template' ? 'saved task' : type;
+    setConfirmState({
+      title: `Delete ${items.length} ${label}${items.length === 1 ? '' : 's'}?`,
+      message: `This will permanently delete the selected ${label}${items.length === 1 ? '' : 's'}. This cannot be undone.`,
+      confirmLabel: 'Delete',
+      tone: 'danger',
+      resolve: (confirmed) => {
+        if (confirmed) {
+          if (type === 'event') deleteEvents(ids);
+          if (type === 'task') deleteTasks(ids);
+          if (type === 'template') deleteTemplates(ids);
+        }
+        setConfirmState(null);
+      },
+    });
   };
 
   const importData = (d) => {
@@ -185,6 +225,7 @@ function Main({ user }) {
           onOpenDay={openDay}
           saveTask={saveTask}
           deleteTask={deleteTask}
+          onRequestBulkDelete={(type, items) => requestBulkDelete(type, items)}
           deleteEvent={deleteEvent}
           onViewTask={(task) => setDetail({ type: 'task', item: task })}
           onViewEvent={(event) => setDetail({ type: 'event', item: event })}
@@ -214,8 +255,10 @@ function Main({ user }) {
             saveTask={saveTask}
             saveTasks={saveTasks}
             deleteTask={deleteTask}
+            onRequestBulkDelete={(type, items) => requestBulkDelete(type, items)}
             saveTemplate={saveTemplate}
             deleteTemplate={deleteTemplate}
+            updateTemplate={updateTemplate}
             onEditingDone={() => setEditingEventId(null)}
           />
         </div>

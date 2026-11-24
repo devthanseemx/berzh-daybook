@@ -66,5 +66,13 @@ export default function useCollection(name, userId) {
     if (cloud) supabase.from(name).delete().eq('id', id).then(logErr);
   }, [cloud, name]);
 
-  return [items, { save, saveMany, remove }, ready];
+  const removeMany = useCallback((ids) => {
+    const uniqueIds = [...new Set(ids)];
+    if (!uniqueIds.length) return;
+    const idSet = new Set(uniqueIds);
+    setItems((l) => l.filter((item) => !idSet.has(item.id)));
+    if (cloud) supabase.from(name).delete().in('id', uniqueIds).then(logErr);
+  }, [cloud, name]);
+
+  return [items, { save, saveMany, remove, removeMany }, ready];
 }

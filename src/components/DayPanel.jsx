@@ -8,9 +8,11 @@ import { requestConfirmation } from '../lib/confirm';
 
 export default function DayPanel({
   date, events, tasks, templates, initialEditId,
-  saveEvent, deleteEvent, saveTask, saveTasks, deleteTask, saveTemplate, deleteTemplate, onEditingDone,
+  saveEvent, deleteEvent, saveTask, saveTasks, deleteTask, saveTemplate, deleteTemplate,
+  updateTemplate, onRequestBulkDelete, onEditingDone,
 }) {
   const [editing, setEditing] = useState(null); // null | 'new' | event object
+  const [selectedEventIds, setSelectedEventIds] = useState([]);
   const isPast = date < todayKey();
 
   const initialEditEvent = useMemo(
@@ -36,7 +38,27 @@ export default function DayPanel({
       <div className="card day-events-card">
         <div className="card-head">
           <h3>Events</h3>
-          {!activeEditing && <button className="primary action-button" onClick={() => setEditing('new')}><Plus size={16} /> Add event</button>}
+          <div className="day-card-actions">
+            {events.length > 0 && (
+              <>
+                <button className="bulk-select-all" onClick={() => {
+                  const allSelected = events.every((event) => selectedEventIds.includes(event.id));
+                  setSelectedEventIds(allSelected ? [] : events.map((event) => event.id));
+                }}>
+                  {events.every((event) => selectedEventIds.includes(event.id)) ? 'Clear selection' : 'Select all'}
+                </button>
+                {events.some((event) => selectedEventIds.includes(event.id)) && (
+                  <button
+                    className="action-button danger-button"
+                    onClick={() => onRequestBulkDelete('event', events.filter((event) => selectedEventIds.includes(event.id)))}
+                  >
+                    <Trash2 size={14} /> Delete selected
+                  </button>
+                )}
+              </>
+            )}
+            {!activeEditing && <button className="primary action-button" onClick={() => setEditing('new')}><Plus size={16} /> Add event</button>}
+          </div>
         </div>
 
         {activeEditing && (
@@ -57,6 +79,15 @@ export default function DayPanel({
         {events.map((ev) => (
           <article key={ev.id} className="event">
             <div className="card-head">
+              <input
+                className="bulk-select"
+                type="checkbox"
+                checked={selectedEventIds.includes(ev.id)}
+                aria-label={`Select event ${ev.title}`}
+                onChange={() => setSelectedEventIds((current) =>
+                  current.includes(ev.id) ? current.filter((id) => id !== ev.id) : [...current, ev.id]
+                )}
+              />
               <strong>{ev.title}</strong>
               <span className={`tag category-tag tone-${categoryTone(ev.category)}`}>{ev.category}</span>
             </div>
@@ -90,8 +121,10 @@ export default function DayPanel({
   saveTask={saveTask}
   saveTasks={saveTasks}
   deleteTask={deleteTask}
+  onRequestBulkDelete={onRequestBulkDelete}
   saveTemplate={saveTemplate}
   deleteTemplate={deleteTemplate}
+  updateTemplate={updateTemplate}
 />
       </div>
     </div>
