@@ -161,8 +161,15 @@ export default function Dashboard({
     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
   const upcomingTasks = allUpcomingTasks.slice(0, 4);
 
-  const filtered = tasks
-    .filter((t) => range === 'all' || (range === 'upcoming' ? t.date >= today : t.date < today))
+  const rangeTasks = tasks
+    .filter((task) => range === 'all' || (range === 'upcoming' ? task.date >= today : task.date < today));
+  const scheduleStatus = {
+    completed: rangeTasks.filter((task) => task.done).length,
+    missed: rangeTasks.filter((task) => !task.done && task.date < today).length,
+    pending: rangeTasks.filter((task) => !task.done && task.date >= today).length,
+  };
+  const scheduleTotal = rangeTasks.length;
+  const filtered = rangeTasks
     .filter((t) => status === 'all' || (status === 'done' ? t.done : !t.done))
     .sort((a, b) => {
       const c = (a.date + a.start).localeCompare(b.date + b.start);
@@ -221,6 +228,10 @@ export default function Dashboard({
         ))}
       </section>
 
+      <div className="dashboard-section-divider">
+        <span>PRIORITIES</span>
+        <h2>Tasks</h2>
+      </div>
       <div className={`dashboard-feature-grid ${missed.length ? 'has-missed-tasks' : ''}`}>
         <section className="card dashboard-card upcoming-tasks-card">
           <div className="dashboard-card-head">
@@ -272,6 +283,10 @@ export default function Dashboard({
         )}
       </div>
 
+      <div className="dashboard-section-divider">
+        <span>DAYBOOK</span>
+        <h2>Events</h2>
+      </div>
       <div className="grid-2">
         <section className="card dashboard-card">
           <div className="dashboard-card-head">
@@ -348,6 +363,10 @@ export default function Dashboard({
         </section>
       </div>
 
+      <div className="dashboard-section-divider">
+        <span>PLAN</span>
+        <h2>Schedule</h2>
+      </div>
       <section className="card dashboard-card schedule-card">
         <div className="section-head dashboard-card-head">
           <div className="dashboard-section-icon blue"><ListTodo size={18} /></div>
@@ -362,41 +381,70 @@ export default function Dashboard({
           />
         </div>
 
-        {days.length === 0 ? (
-          <div className="dashboard-empty"><Clock3 size={19} /><p>No time blocks match this filter.</p></div>
-        ) : (
-          <>
-            <div className="bulk-actions schedule-bulk-actions">
-              <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedTaskIds, visibleScheduleTasks, selectedTaskIds)}>
-                {visibleScheduleTasks.length > 0 && visibleScheduleTasks.every((item) => selectedTaskIds.includes(item.id)) ? 'Clear selection' : 'Select visible'}
-              </button>
-              {visibleScheduleTasks.some((item) => selectedTaskIds.includes(item.id)) && (
-                <button className="action-button danger-button" onClick={() => onRequestBulkDelete('task', visibleScheduleTasks.filter((item) => selectedTaskIds.includes(item.id)))}>
-                  <Trash2 size={14} /> Delete selected ({visibleScheduleTasks.filter((item) => selectedTaskIds.includes(item.id)).length})
-                </button>
+        <div className="schedule-layout-grid">
+          <aside className="task-status-card">
+            <div className="task-status-card-heading">
+              <span className="dashboard-section-icon green"><CheckCircle2 size={17} /></span>
+              <div><h3>Task status</h3><p>{range === 'all' ? 'All dates' : range === 'upcoming' ? 'Upcoming tasks' : 'Past tasks'}</p></div>
+            </div>
+            <div className="task-status-meter" role="img" aria-label={`${scheduleStatus.completed} completed, ${scheduleStatus.pending} pending, ${scheduleStatus.missed} missed`}>
+              {scheduleTotal > 0 && (
+                <>
+                  <span className="complete" style={{ width: `${(scheduleStatus.completed / scheduleTotal) * 100}%` }} />
+                  <span className="pending" style={{ width: `${(scheduleStatus.pending / scheduleTotal) * 100}%` }} />
+                  <span className="missed" style={{ width: `${(scheduleStatus.missed / scheduleTotal) * 100}%` }} />
+                </>
               )}
             </div>
-            {days.map((d) => (
-            <div key={d} className="day-group">
-              <h4 className="day-head">{d === today ? 'Today · ' : ''}{prettyDate(d)}</h4>
-              <ul className="list">
-                {groups[d].map((t) => (
-                  <TaskLine
-                    key={t.id}
-                    t={t}
-                    {...lineProps}
-                    selected={selectedTaskIds.includes(t.id)}
-                    onToggleSelect={(id) => toggleSelected(setSelectedTaskIds, id)}
-                  />
-                ))}
-              </ul>
+            <div className="task-status-legend">
+              <span><i className="complete" />Completed <b>{scheduleStatus.completed}</b></span>
+              <span><i className="pending" />Pending <b>{scheduleStatus.pending}</b></span>
+              <span><i className="missed" />Missed <b>{scheduleStatus.missed}</b></span>
             </div>
-            ))}
-          </>
-        )}
-        <MoreButtons limit={dayLimit} total={allDays.length} setLimit={setDayLimit} />
+            {scheduleTotal === 0 && <p className="task-status-empty">No tasks in this date range yet.</p>}
+          </aside>
+          <div className="schedule-list-column">
+            {days.length === 0 ? (
+              <div className="dashboard-empty"><Clock3 size={19} /><p>No time blocks match this filter.</p></div>
+            ) : (
+              <>
+                <div className="bulk-actions schedule-bulk-actions">
+                  <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedTaskIds, visibleScheduleTasks, selectedTaskIds)}>
+                    {visibleScheduleTasks.length > 0 && visibleScheduleTasks.every((item) => selectedTaskIds.includes(item.id)) ? 'Clear selection' : 'Select visible'}
+                  </button>
+                  {visibleScheduleTasks.some((item) => selectedTaskIds.includes(item.id)) && (
+                    <button className="action-button danger-button" onClick={() => onRequestBulkDelete('task', visibleScheduleTasks.filter((item) => selectedTaskIds.includes(item.id)))}>
+                      <Trash2 size={14} /> Delete selected ({visibleScheduleTasks.filter((item) => selectedTaskIds.includes(item.id)).length})
+                    </button>
+                  )}
+                </div>
+                {days.map((d) => (
+                  <div key={d} className="day-group">
+                    <h4 className="day-head">{d === today ? 'Today · ' : ''}{prettyDate(d)}</h4>
+                    <ul className="list">
+                      {groups[d].map((t) => (
+                        <TaskLine
+                          key={t.id}
+                          t={t}
+                          {...lineProps}
+                          selected={selectedTaskIds.includes(t.id)}
+                          onToggleSelect={(id) => toggleSelected(setSelectedTaskIds, id)}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </>
+            )}
+            <MoreButtons limit={dayLimit} total={allDays.length} setLimit={setDayLimit} />
+          </div>
+        </div>
       </section>
 
+      <div className="dashboard-section-divider">
+        <span>INSIGHTS</span>
+        <h2>Your progress</h2>
+      </div>
       <Charts events={events} tasks={tasks} />
     </div>
   );

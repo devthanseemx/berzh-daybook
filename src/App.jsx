@@ -243,7 +243,7 @@ function Main({ user }) {
         />
       ) : (
         <div className="split">
-          <Calendar events={events} tasks={tasks} selected={selected} onSelect={setSelected} />
+          <Calendar key={selected.slice(0, 7)} events={events} tasks={tasks} selected={selected} onSelect={setSelected} />
           <DayPanel
             date={selected}
             allEvents={events}

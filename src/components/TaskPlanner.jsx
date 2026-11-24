@@ -5,6 +5,7 @@ import FilterBar from './FilterBar';
 import { notify } from '../lib/notify';
 import { fmt12, getTaskDates, pad } from '../utils/dates';
 import { requestConfirmation } from '../lib/confirm';
+import SavedTaskEditorModal from './SavedTaskEditorModal';
 
 const addHour = (t) => {
   const [h, m] = t.split(':').map(Number);
@@ -345,89 +346,21 @@ export default function TaskPlanner({
                       ))}
                     </div>
                   )}
-                  {editingTemplate?.id === tpl.id && (
-                    <form
-                      className="saved-template-editor"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        const titleValue = editingTemplate.title.trim();
-                        if (!titleValue) return notify.warning('Enter a saved task name first');
-                        updateTemplate({
-                          ...tpl,
-                          title: titleValue,
-                          description: editingTemplate.description.trim(),
-                          subtasks: editingTemplate.subtasks
-                            .map((subtask) => subtask.title.trim())
-                            .filter(Boolean),
-                        });
-                        setEditingTemplate(null);
-                      }}
-                    >
-                      <label>
-                        <span>Task title</span>
-                        <input
-                          value={editingTemplate.title}
-                          onChange={(event) => setEditingTemplate({ ...editingTemplate, title: event.target.value })}
-                        />
-                      </label>
-                      <label>
-                        <span>Description</span>
-                        <textarea
-                          rows={2}
-                          value={editingTemplate.description}
-                          onChange={(event) => setEditingTemplate({ ...editingTemplate, description: event.target.value })}
-                        />
-                      </label>
-                      <div className="saved-template-subtasks">
-                        <span>Subtasks</span>
-                        {editingTemplate.subtasks.map((subtask, index) => (
-                          <div className="saved-template-subtask" key={`${tpl.id}-sub-${index}`}>
-                            <input
-                              aria-label={`Subtask ${index + 1}`}
-                              value={subtask.title}
-                              onChange={(event) => setEditingTemplate({
-                                ...editingTemplate,
-                                subtasks: editingTemplate.subtasks.map((item, itemIndex) =>
-                                  itemIndex === index ? { ...item, title: event.target.value } : item
-                                ),
-                              })}
-                            />
-                            <button
-                              type="button"
-                              className="icon task-icon-button danger-button"
-                              aria-label={`Delete subtask ${subtask.title || index + 1}`}
-                              onClick={() => setEditingTemplate({
-                                ...editingTemplate,
-                                subtasks: editingTemplate.subtasks.filter((_, itemIndex) => itemIndex !== index),
-                              })}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          className="bulk-select-all"
-                          onClick={() => setEditingTemplate({
-                            ...editingTemplate,
-                            subtasks: [...editingTemplate.subtasks, { title: '' }],
-                          })}
-                        >
-                          <Plus size={14} /> Add subtask
-                        </button>
-                      </div>
-                      <div className="saved-template-editor-actions">
-                        <button type="button" className="action-button" onClick={() => setEditingTemplate(null)}>Cancel</button>
-                        <button type="submit" className="action-button primary">Save changes</button>
-                      </div>
-                    </form>
-                  )}
                 </article>
               ))}
             </div>
           </>
         )}
       </details>
+      <SavedTaskEditorModal
+        template={editingTemplate}
+        onChange={setEditingTemplate}
+        onClose={() => setEditingTemplate(null)}
+        onSave={(template) => {
+          updateTemplate(template);
+          setEditingTemplate(null);
+        }}
+      />
     </div>
   );
 }
