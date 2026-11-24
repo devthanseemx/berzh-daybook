@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CalendarPlus, Pencil, Plus, Trash2 } from 'lucide-react';
+import { CalendarDays, CalendarPlus, Pencil, Plus, Trash2 } from 'lucide-react';
 import { prettyDate, todayKey } from '../utils/dates';
 import { categoryTone } from '../utils/categoryTone';
 import EventForm from './EventForm';
@@ -7,7 +7,7 @@ import TaskPlanner from './TaskPlanner';
 import { requestConfirmation } from '../lib/confirm';
 
 export default function DayPanel({
-  date, events, tasks, templates, initialEditId,
+  date, events, allEvents, tasks, templates, initialEditId, onSelectDay,
   saveEvent, deleteEvent, saveTask, saveTasks, deleteTask, saveTemplate, deleteTemplate,
   updateTemplate, onRequestBulkDelete, onEditingDone,
 }) {
@@ -20,6 +20,7 @@ export default function DayPanel({
     [initialEditId, events]
   );
   const activeEditing = editing ?? initialEditEvent;
+  const calendarEvents = [...(allEvents || events)].sort((a, b) => a.date.localeCompare(b.date));
 
   const handleSave = (ev) => {
     saveEvent(ev);
@@ -37,20 +38,20 @@ export default function DayPanel({
 
       <div className="card day-events-card">
         <div className="card-head">
-          <h3>Events</h3>
+          <h3>All events <span className="count-chip">{calendarEvents.length}</span></h3>
           <div className="day-card-actions">
-            {events.length > 0 && (
+            {calendarEvents.length > 0 && (
               <>
                 <button className="bulk-select-all" onClick={() => {
-                  const allSelected = events.every((event) => selectedEventIds.includes(event.id));
-                  setSelectedEventIds(allSelected ? [] : events.map((event) => event.id));
+                  const allSelected = calendarEvents.every((event) => selectedEventIds.includes(event.id));
+                  setSelectedEventIds(allSelected ? [] : calendarEvents.map((event) => event.id));
                 }}>
-                  {events.every((event) => selectedEventIds.includes(event.id)) ? 'Clear selection' : 'Select all'}
+                  {calendarEvents.every((event) => selectedEventIds.includes(event.id)) ? 'Clear selection' : 'Select all'}
                 </button>
-                {events.some((event) => selectedEventIds.includes(event.id)) && (
+                {calendarEvents.some((event) => selectedEventIds.includes(event.id)) && (
                   <button
                     className="action-button danger-button"
-                    onClick={() => onRequestBulkDelete('event', events.filter((event) => selectedEventIds.includes(event.id)))}
+                    onClick={() => onRequestBulkDelete('event', calendarEvents.filter((event) => selectedEventIds.includes(event.id)))}
                   >
                     <Trash2 size={14} /> Delete selected
                   </button>
@@ -64,7 +65,7 @@ export default function DayPanel({
         {activeEditing && (
           <EventForm
             key={activeEditing === 'new' ? 'new' : activeEditing.id}
-            date={date}
+            date={activeEditing === 'new' ? date : activeEditing.date}
             initial={activeEditing === 'new' ? null : activeEditing}
             onSave={handleSave}
             onCancel={() => {
@@ -74,9 +75,9 @@ export default function DayPanel({
           />
         )}
 
-        {events.length === 0 && !activeEditing && <p className="muted">No events on this date.</p>}
+        {calendarEvents.length === 0 && !activeEditing && <p className="muted">No events added yet. Add one for this day.</p>}
 
-        {events.map((ev) => (
+        {calendarEvents.map((ev) => (
           <article key={ev.id} className="event">
             <div className="card-head">
               <input
@@ -90,6 +91,12 @@ export default function DayPanel({
               />
               <strong>{ev.title}</strong>
               <span className={`tag category-tag tone-${categoryTone(ev.category)}`}>{ev.category}</span>
+            </div>
+            <div className="event-list-date-row">
+              <span>{prettyDate(ev.date)}</span>
+              <button type="button" className="action-button event-view-day" onClick={() => onSelectDay?.(ev.date)}>
+                <CalendarDays size={14} /> View day
+              </button>
             </div>
             {ev.company && <p><b>Company:</b> {ev.company}</p>}
             {ev.jobTitle && <p><b>Job title:</b> {ev.jobTitle}</p>}

@@ -19,7 +19,7 @@ export default function EventForm({ date, initial, onSave, onCancel }) {
   const submit = (e) => {
     e.preventDefault();
     if (!f.title.trim()) return;
-    onSave({ ...f, id: initial?.id || crypto.randomUUID(), date });
+    onSave({ ...f, id: initial?.id || crypto.randomUUID(), date: initial?.date || date });
   };
 
   return (

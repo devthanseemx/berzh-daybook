@@ -246,8 +246,10 @@ function Main({ user }) {
           <Calendar events={events} tasks={tasks} selected={selected} onSelect={setSelected} />
           <DayPanel
             date={selected}
+            allEvents={events}
             initialEditId={editingEventId}
             events={events.filter((e) => e.date === selected)}
+            onSelectDay={setSelected}
             tasks={tasks.filter((t) => t.date === selected)}
             templates={templates}
             saveEvent={saveEvent}

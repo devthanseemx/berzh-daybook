@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Plus, Star, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Star, Trash2 } from 'lucide-react';
 import TimeWheel from './TimeWheel';
 import FilterBar from './FilterBar';
 import { notify } from '../lib/notify';
@@ -18,6 +18,7 @@ const snap5 = (t) => {
 
 function TaskItem({ t, starred, selected, onToggleSelect, saveTask, deleteTask, saveTemplate }) {
   const [sub, setSub] = useState('');
+  const [subsOpen, setSubsOpen] = useState(true);
   const subs = t.subtasks || [];
 
   const addSub = (e) => {
@@ -49,9 +50,18 @@ function TaskItem({ t, starred, selected, onToggleSelect, saveTask, deleteTask, 
         <input type="checkbox" checked={t.done} aria-label={`Mark ${t.title} as complete`} onChange={() => saveTask({ ...t, done: !t.done })} />
         <span className="row-date">{fmt12(t.start)} – {fmt12(t.end)}</span>
         <span className="row-title">{t.title}</span>
-        {subs.length > 0 && (
-          <span className="tag">{subs.filter((s) => s.done).length}/{subs.length}</span>
-        )}
+        {subs.length > 0 ? (
+          <button
+            type="button"
+            className="subtask-count"
+            aria-expanded={subsOpen}
+            aria-label={`${subsOpen ? 'Collapse' : 'Expand'} ${subs.length} subtasks`}
+            onClick={() => setSubsOpen((open) => !open)}
+          >
+            {subsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {subs.filter((s) => s.done).length}/{subs.length}
+          </button>
+        ) : <span className="subtask-count-placeholder" aria-hidden="true" />}
         <button
           className="icon task-icon-button"
           aria-label={starred ? 'Already saved' : 'Save as reusable task'}
@@ -72,20 +82,24 @@ function TaskItem({ t, starred, selected, onToggleSelect, saveTask, deleteTask, 
 
       {t.description && <p className="task-description">{t.description}</p>}
 
-      <ul className="subs">
-        {subs.map((s) => (
-          <li key={s.id} className={s.done ? 'done' : ''}>
-            <input type="checkbox" checked={s.done} aria-label={`Mark ${s.title} as complete`} onChange={() => toggleSub(s.id)} />
-            <span className="grow">{s.title}</span>
-            <button className="icon task-icon-button danger-button" aria-label="Delete subtask" onClick={() => deleteSub(s.id)}><Trash2 size={14} /></button>
-          </li>
-        ))}
-      </ul>
+      {subsOpen && (
+        <>
+          <ul className="subs">
+            {subs.map((s) => (
+              <li key={s.id} className={s.done ? 'done' : ''}>
+                <input type="checkbox" checked={s.done} aria-label={`Mark ${s.title} as complete`} onChange={() => toggleSub(s.id)} />
+                <span className="grow">{s.title}</span>
+                <button className="icon task-icon-button danger-button" aria-label="Delete subtask" onClick={() => deleteSub(s.id)}><Trash2 size={14} /></button>
+              </li>
+            ))}
+          </ul>
 
-      <form className="sub-form" onSubmit={addSub}>
-        <input placeholder="+ Add subtask" value={sub} onChange={(e) => setSub(e.target.value)} />
-        <button className="subtask-add-button" type="submit" aria-label="Add subtask" disabled={!sub.trim()}><Plus size={15} /></button>
-      </form>
+          <form className="sub-form" onSubmit={addSub}>
+            <input placeholder="+ Add subtask" value={sub} onChange={(e) => setSub(e.target.value)} />
+            <button className="subtask-add-button" type="submit" aria-label="Add subtask" disabled={!sub.trim()}><Plus size={15} /></button>
+          </form>
+        </>
+      )}
     </li>
   );
 }
@@ -103,6 +117,7 @@ export default function TaskPlanner({
   const [description, setDescription] = useState('');
   const [openTemplateId, setOpenTemplateId] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [templatesOpen, setTemplatesOpen] = useState(true);
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
   const [selectedTemplateIds, setSelectedTemplateIds] = useState([]);
   const [status, setStatus] = useState('all');
@@ -225,7 +240,11 @@ export default function TaskPlanner({
       {sorted.length === 0 && <p className="muted">No time blocks for this day yet.</p>}
       {sorted.length > 0 && shown.length === 0 && <p className="muted">No tasks match this filter.</p>}
 
-      <details className="templates">
+      <details
+        className="templates"
+        open={templatesOpen}
+        onToggle={(event) => setTemplatesOpen(event.currentTarget.open)}
+      >
         <summary>
           <span className="saved-task-summary-icon"><Star size={15} /></span>
           <span><strong>Saved tasks</strong><small>{templates.length} reusable task{templates.length === 1 ? '' : 's'}</small></span>

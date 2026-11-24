@@ -70,8 +70,21 @@ export default function useCollection(name, userId) {
     const uniqueIds = [...new Set(ids)];
     if (!uniqueIds.length) return;
     const idSet = new Set(uniqueIds);
-    setItems((l) => l.filter((item) => !idSet.has(item.id)));
-    if (cloud) supabase.from(name).delete().in('id', uniqueIds).then(logErr);
+    const removeLocally = () => setItems((l) => l.filter((item) => !idSet.has(item.id)));
+    if (!cloud) {
+      removeLocally();
+      return;
+    }
+    supabase.from(name).delete().in('id', uniqueIds).then(({ error }) => {
+      if (error) {
+        logErr({ error });
+        return;
+      }
+      removeLocally();
+    }).catch((error) => {
+      console.error('Supabase error:', error.message);
+      notify.error(`Could not sync with Supabase: ${error.message}`);
+    });
   }, [cloud, name]);
 
   return [items, { save, saveMany, remove, removeMany }, ready];

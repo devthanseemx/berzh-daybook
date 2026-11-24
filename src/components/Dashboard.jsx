@@ -47,8 +47,8 @@ function EventRow({ ev, onView, onRequestDelete, selected, onToggleSelect }) {
   );
 }
 
-function TaskLine({ t, saveTask, onRequestDelete, onView, showDate, selected, onToggleSelect }) {
-  const [open, setOpen] = useState(true);
+function TaskLine({ t, saveTask, onRequestDelete, onView, showDate, selected, onToggleSelect, startCollapsed = false }) {
+  const [open, setOpen] = useState(!startCollapsed);
   const subs = t.subtasks || [];
   const toggleSub = (id) =>
     saveTask({ ...t, subtasks: subs.map((s) => (s.id === id ? { ...s, done: !s.done } : s)) });
@@ -70,12 +70,18 @@ function TaskLine({ t, saveTask, onRequestDelete, onView, showDate, selected, on
           {showDate ? `${shortDate(t.date)} · ` : ''}{fmt12(t.start)} – {fmt12(t.end)}
         </button>
         <button type="button" className="row-title link-ish row-detail-button" onClick={() => onView(t)}>{t.title}</button>
-        {subs.length > 0 && (
-          <button className="subtask-count" title="Show or hide subtasks" onClick={() => setOpen(!open)}>
+        {subs.length > 0 ? (
+          <button
+            className="subtask-count"
+            title="Show or hide subtasks"
+            aria-expanded={open}
+            aria-label={`${open ? 'Collapse' : 'Expand'} ${subs.length} subtasks`}
+            onClick={() => setOpen(!open)}
+          >
             {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             {subs.filter((s) => s.done).length}/{subs.length}
           </button>
-        )}
+        ) : <span className="subtask-count-placeholder" aria-hidden="true" />}
         <button
           className="icon row-action"
           aria-label="Delete task"
@@ -215,41 +221,56 @@ export default function Dashboard({
         ))}
       </section>
 
-      <section className="card dashboard-card upcoming-tasks-card">
-        <div className="dashboard-card-head">
-          <div className="dashboard-section-icon blue"><ListTodo size={18} /></div>
-          <div>
-            <p className="dashboard-kicker">COMING UP</p>
-            <h2>Next on your list</h2>
+      <div className={`dashboard-feature-grid ${missed.length ? 'has-missed-tasks' : ''}`}>
+        <section className="card dashboard-card upcoming-tasks-card">
+          <div className="dashboard-card-head">
+            <div className="dashboard-section-icon blue"><ListTodo size={18} /></div>
+            <div>
+              <p className="dashboard-kicker">COMING UP</p>
+              <h2>Next on your list</h2>
+            </div>
+            <button className="upcoming-calendar-link" onClick={() => onOpenDay(today)}>
+              View calendar <ArrowUpRight size={15} />
+            </button>
           </div>
-          <button className="upcoming-calendar-link" onClick={() => onOpenDay(today)}>
-            View calendar <ArrowUpRight size={15} />
-          </button>
-        </div>
-        {upcomingTasks.length === 0 ? (
-          <div className="upcoming-tasks-empty">
-            <CheckCircle2 size={19} />
-            <span>You're all caught up. Plan something for your day.</span>
-          </div>
-        ) : (
-          <>
-            <ul className="upcoming-task-list">
-              {upcomingTasks.map((task) => (
-                <UpcomingTaskRow key={task.id} task={task} onView={(item) => onViewTask(item)} saveTask={saveTask} />
-              ))}
+          {upcomingTasks.length === 0 ? (
+            <div className="upcoming-tasks-empty">
+              <CheckCircle2 size={19} />
+              <span>You're all caught up. Plan something for your day.</span>
+            </div>
+          ) : (
+            <>
+              <ul className="upcoming-task-list">
+                {upcomingTasks.map((task) => (
+                  <UpcomingTaskRow key={task.id} task={task} onView={(item) => onViewTask(item)} saveTask={saveTask} />
+                ))}
+              </ul>
+              {allUpcomingTasks.length > upcomingTasks.length && (
+                <button
+                  className="upcoming-more"
+                  onClick={() => onOpenDay(allUpcomingTasks[upcomingTasks.length].date)}
+                >
+                  View all {allUpcomingTasks.length} upcoming tasks
+                  <ArrowUpRight size={14} />
+                </button>
+              )}
+            </>
+          )}
+        </section>
+        {missed.length > 0 && (
+          <section className="card dashboard-card missed-card">
+            <div className="dashboard-card-head">
+              <div className="dashboard-section-icon red"><CircleAlert size={17} /></div>
+              <div><h2>Missed tasks</h2><p>Past tasks not marked complete</p></div>
+              <span className="count-chip">{missed.length}</span>
+            </div>
+            <p className="muted">Past tasks not ticked as done. Tick them if you finished them.</p>
+            <ul className="list">
+              {missed.map((t) => <TaskLine key={t.id} t={t} showDate startCollapsed {...lineProps} />)}
             </ul>
-            {allUpcomingTasks.length > upcomingTasks.length && (
-              <button
-                className="upcoming-more"
-                onClick={() => onOpenDay(allUpcomingTasks[upcomingTasks.length].date)}
-              >
-                View all {allUpcomingTasks.length} upcoming tasks
-                <ArrowUpRight size={14} />
-              </button>
-            )}
-          </>
+          </section>
         )}
-      </section>
+      </div>
 
       <div className="grid-2">
         <section className="card dashboard-card">
@@ -375,20 +396,6 @@ export default function Dashboard({
         )}
         <MoreButtons limit={dayLimit} total={allDays.length} setLimit={setDayLimit} />
       </section>
-
-      {missed.length > 0 && (
-        <section className="card dashboard-card missed-card">
-          <div className="dashboard-card-head">
-            <div className="dashboard-section-icon red"><CircleAlert size={17} /></div>
-            <div><h2>Missed tasks</h2><p>Past tasks not marked complete</p></div>
-            <span className="count-chip">{missed.length}</span>
-          </div>
-          <p className="muted">Past tasks not ticked as done. Tick them if you finished them.</p>
-          <ul className="list">
-            {missed.map((t) => <TaskLine key={t.id} t={t} showDate {...lineProps} />)}
-          </ul>
-        </section>
-      )}
 
       <Charts events={events} tasks={tasks} />
     </div>
