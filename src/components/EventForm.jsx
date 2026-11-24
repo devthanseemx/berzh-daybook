@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import Dropdown from './Dropdown';
 import { categoryTone } from '../utils/categoryTone';
+import DescriptionField from './DescriptionField';
 
 const CATEGORIES = ['Job application', 'Interview', 'Meeting', 'Personal', 'Other'];
 
@@ -38,11 +39,16 @@ export default function EventForm({ date, initial, onSave, onCancel }) {
           <input placeholder="Company" value={f.company} onChange={set('company')} />
           <input placeholder="Job title" value={f.jobTitle} onChange={set('jobTitle')} />
           <input placeholder="Salary information" value={f.salary} onChange={set('salary')} />
-          <textarea rows={3} placeholder="Job description" value={f.description} onChange={set('description')} />
           <textarea rows={2} placeholder="Things to do from this job (follow-up, assignment, interview prep...)" value={f.nextSteps} onChange={set('nextSteps')} />
         </>
       )}
 
+      <DescriptionField
+        value={f.description}
+        onChange={(description) => setF((current) => ({ ...current, description }))}
+        label="Description (optional)"
+        placeholder="Add event details, notes, or a numbered list…"
+      />
       <textarea rows={2} placeholder="Notes / what happened" value={f.notes} onChange={set('notes')} />
 
       <div className="form-actions">

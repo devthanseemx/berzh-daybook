@@ -87,8 +87,9 @@ export default function ImportExport({ events, tasks, templates, onImport, onClo
             Importing adds items; it never replaces or merges existing ones.
           </p>
           <p className="muted">
-            Task descriptions and saved-template descriptions are included in backups. Tasks added across a date range
-            are stored as one task per date, so every day is included in the export and restored by import.
+            Event, task, and saved-task descriptions support multiple lines, including numbered lists. They are
+            preserved in backups. Tasks added across a date range are stored as one task per date, so every day is
+            included in the export and restored by import.
           </p>
           <div className="fields-wrap">
             <table className="fields">

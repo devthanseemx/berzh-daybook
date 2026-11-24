@@ -6,7 +6,7 @@ import {
 import { todayKey, shortDate, prettyDate, fmt12 } from '../utils/dates';
 import { categoryTone } from '../utils/categoryTone';
 import FilterBar from './FilterBar';
-import Charts, { TaskStatusChart } from './Charts';
+import { TaskStatusChart } from './Charts';
 
 const STEP = 5;
 
@@ -105,9 +105,16 @@ function TaskLine({ t, saveTask, onRequestDelete, onView, showDate, selected, on
   );
 }
 
-function UpcomingTaskRow({ task, onView, saveTask }) {
+function UpcomingTaskRow({ task, onView, saveTask, selected, onToggleSelect }) {
   return (
     <li className="upcoming-task-row">
+      <input
+        type="checkbox"
+        className="bulk-select"
+        checked={selected}
+        aria-label={`Select task ${task.title}`}
+        onChange={() => onToggleSelect(task.id)}
+      />
       <input
         type="checkbox"
         checked={task.done}
@@ -139,6 +146,8 @@ export default function Dashboard({
   const [order, setOrder] = useState('asc');
   const [selectedEventIds, setSelectedEventIds] = useState([]);
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
+  const [selectedUpcomingTaskIds, setSelectedUpcomingTaskIds] = useState([]);
+  const [selectedMissedTaskIds, setSelectedMissedTaskIds] = useState([]);
 
   const toggleSelected = (setIds, id) => setIds((current) =>
     current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
@@ -160,6 +169,7 @@ export default function Dashboard({
     .filter((task) => task.date >= today && !task.done)
     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
   const upcomingTasks = allUpcomingTasks.slice(0, 4);
+  const visibleUpcomingEvents = upcomingAll.slice(0, upLimit);
 
   const filtered = tasks
     .filter((task) => range === 'all' || (range === 'upcoming' ? task.date >= today : task.date < today))
@@ -180,6 +190,9 @@ export default function Dashboard({
     .filter((t) => t.date < today && !t.done)
     .sort((a, b) => (b.date + b.start).localeCompare(a.date + a.start))
     .slice(0, 6);
+  const selectedUpcomingTasks = upcomingTasks.filter((task) => selectedUpcomingTaskIds.includes(task.id));
+  const selectedMissedTasks = missed.filter((task) => selectedMissedTaskIds.includes(task.id));
+  const selectedUpcomingEvents = visibleUpcomingEvents.filter((event) => selectedEventIds.includes(event.id));
 
   const todayTasks = tasks.filter((t) => t.date === today);
   const lineProps = {
@@ -223,7 +236,7 @@ export default function Dashboard({
 
       <div className="dashboard-section-divider">
         <span>PRIORITIES</span>
-        <h2>Tasks</h2>
+        <h2>Your priorities</h2>
       </div>
       <div className="dashboard-feature-grid">
         <section className="card dashboard-card upcoming-tasks-card">
@@ -233,9 +246,24 @@ export default function Dashboard({
               <h2>Upcoming tasks</h2>
               <p>Your next time blocks</p>
             </div>
-            <button className="upcoming-calendar-link" onClick={() => onOpenDay(today)}>
-              View calendar <ArrowUpRight size={15} />
-            </button>
+            <div className="dashboard-header-actions">
+              <button className="upcoming-calendar-link" onClick={() => onOpenDay(today)}>
+                View calendar <ArrowUpRight size={15} />
+              </button>
+              <span className="count-chip">{allUpcomingTasks.length}</span>
+              <button
+                className="bulk-select-all"
+                disabled={upcomingTasks.length === 0}
+                onClick={() => toggleAllSelected(setSelectedUpcomingTaskIds, upcomingTasks, selectedUpcomingTaskIds)}
+              >
+                {upcomingTasks.length > 0 && upcomingTasks.every((task) => selectedUpcomingTaskIds.includes(task.id)) ? 'Clear selection' : 'Select visible'}
+              </button>
+              {selectedUpcomingTasks.length > 0 && (
+                <button className="action-button danger-button" onClick={() => onRequestBulkDelete('task', selectedUpcomingTasks)}>
+                  <Trash2 size={14} /> Delete ({selectedUpcomingTasks.length})
+                </button>
+              )}
+            </div>
           </div>
           {upcomingTasks.length === 0 ? (
             <div className="upcoming-tasks-empty">
@@ -246,7 +274,14 @@ export default function Dashboard({
             <>
               <ul className="upcoming-task-list">
                 {upcomingTasks.map((task) => (
-                  <UpcomingTaskRow key={task.id} task={task} onView={(item) => onViewTask(item)} saveTask={saveTask} />
+                  <UpcomingTaskRow
+                    key={task.id}
+                    task={task}
+                    onView={(item) => onViewTask(item)}
+                    saveTask={saveTask}
+                    selected={selectedUpcomingTaskIds.includes(task.id)}
+                    onToggleSelect={(id) => toggleSelected(setSelectedUpcomingTaskIds, id)}
+                  />
                 ))}
               </ul>
               {allUpcomingTasks.length > upcomingTasks.length && (
@@ -265,24 +300,28 @@ export default function Dashboard({
           <div className="dashboard-card-head">
             <div className="dashboard-section-icon violet"><CalendarDays size={17} /></div>
             <div><h2>Upcoming events</h2><p>Dates on your calendar</p></div>
-            <span className="count-chip">{upcomingAll.length}</span>
+            <div className="dashboard-header-actions">
+              <span className="count-chip">{upcomingAll.length}</span>
+              <button
+                className="bulk-select-all"
+                disabled={visibleUpcomingEvents.length === 0}
+                onClick={() => toggleAllSelected(setSelectedEventIds, visibleUpcomingEvents, selectedEventIds)}
+              >
+                {visibleUpcomingEvents.length > 0 && visibleUpcomingEvents.every((event) => selectedEventIds.includes(event.id)) ? 'Clear selection' : 'Select visible'}
+              </button>
+              {selectedUpcomingEvents.length > 0 && (
+                <button className="action-button danger-button" onClick={() => onRequestBulkDelete('event', selectedUpcomingEvents)}>
+                  <Trash2 size={14} /> Delete ({selectedUpcomingEvents.length})
+                </button>
+              )}
+            </div>
           </div>
           {upcomingAll.length === 0 ? (
             <div className="dashboard-empty"><CalendarDays size={19} /><p>Nothing coming up. Add an event from your calendar.</p></div>
           ) : (
             <>
-              <div className="bulk-actions">
-                <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedEventIds, upcomingAll.slice(0, upLimit), selectedEventIds)}>
-                  {upcomingAll.slice(0, upLimit).every((item) => selectedEventIds.includes(item.id)) ? 'Clear selection' : 'Select visible'}
-                </button>
-                {upcomingAll.some((item) => selectedEventIds.includes(item.id)) && (
-                  <button className="action-button danger-button" onClick={() => onRequestBulkDelete('event', upcomingAll.filter((item) => selectedEventIds.includes(item.id)))}>
-                    <Trash2 size={14} /> Delete selected ({upcomingAll.filter((item) => selectedEventIds.includes(item.id)).length})
-                  </button>
-                )}
-              </div>
               <ul className="list">
-                {upcomingAll.slice(0, upLimit).map((e) => (
+                {visibleUpcomingEvents.map((e) => (
                   <EventRow
                     key={e.id}
                     ev={e}
@@ -302,14 +341,36 @@ export default function Dashboard({
           <div className="dashboard-card-head">
             <div className="dashboard-section-icon red"><CircleAlert size={17} /></div>
             <div><h2>Missed tasks</h2><p>Past tasks not marked complete</p></div>
-            <span className="count-chip">{missed.length}</span>
+            <div className="dashboard-header-actions">
+              <span className="count-chip">{missed.length}</span>
+              <button
+                className="bulk-select-all"
+                disabled={missed.length === 0}
+                onClick={() => toggleAllSelected(setSelectedMissedTaskIds, missed, selectedMissedTaskIds)}
+              >
+                {missed.length > 0 && missed.every((task) => selectedMissedTaskIds.includes(task.id)) ? 'Clear selection' : 'Select visible'}
+              </button>
+              {selectedMissedTasks.length > 0 && (
+                <button className="action-button danger-button" onClick={() => onRequestBulkDelete('task', selectedMissedTasks)}>
+                  <Trash2 size={14} /> Delete ({selectedMissedTasks.length})
+                </button>
+              )}
+            </div>
           </div>
           {missed.length === 0 ? (
             <div className="dashboard-empty"><CheckCircle2 size={19} /><p>No missed tasks. You’re all caught up.</p></div>
           ) : (
             <ul className="list">
               {missed.map((task) => (
-                <TaskLine key={task.id} t={task} showDate startCollapsed {...lineProps} />
+                <TaskLine
+                  key={task.id}
+                  t={task}
+                  showDate
+                  startCollapsed
+                  selected={selectedMissedTaskIds.includes(task.id)}
+                  onToggleSelect={(id) => toggleSelected(setSelectedMissedTaskIds, id)}
+                  {...lineProps}
+                />
               ))}
             </ul>
           )}
@@ -411,11 +472,6 @@ export default function Dashboard({
         </div>
       </div>
 
-      <div className="dashboard-section-divider">
-        <span>INSIGHTS</span>
-        <h2>Your progress</h2>
-      </div>
-      <Charts events={events} tasks={tasks} />
     </div>
   );
 }

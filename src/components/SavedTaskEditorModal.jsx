@@ -1,5 +1,6 @@
 import { Plus, Star, Trash2, X } from 'lucide-react';
 import { notify } from '../lib/notify';
+import DescriptionField from './DescriptionField';
 
 export default function SavedTaskEditorModal({ template, onChange, onClose, onSave }) {
   if (!template) return null;
@@ -48,10 +49,12 @@ export default function SavedTaskEditorModal({ template, onChange, onClose, onSa
               <span>Task title</span>
               <input autoFocus value={template.title} onChange={(event) => setField('title', event.target.value)} />
             </label>
-            <label>
-              <span>Description</span>
-              <textarea rows={3} value={template.description} onChange={(event) => setField('description', event.target.value)} />
-            </label>
+            <DescriptionField
+              value={template.description}
+              onChange={(description) => setField('description', description)}
+              label="Description (optional)"
+              placeholder="Add reusable task details or a numbered list…"
+            />
             <div className="saved-task-edit-subtasks">
               <div className="saved-task-edit-subtasks-heading">
                 <span>Subtasks</span>

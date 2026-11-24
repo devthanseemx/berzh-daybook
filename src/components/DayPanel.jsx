@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CalendarDays, CalendarPlus, Plus, Trash2 } from 'lucide-react';
+import { CalendarPlus, Plus, Trash2 } from 'lucide-react';
 import { prettyDate, todayKey } from '../utils/dates';
 import { categoryTone } from '../utils/categoryTone';
 import EventForm from './EventForm';
@@ -8,7 +8,7 @@ import DetailModal from './DetailModal';
 import { requestConfirmation } from '../lib/confirm';
 
 export default function DayPanel({
-  date, events, allEvents, tasks, allTasks, templates, initialEditId, onSelectDay,
+  date, events, tasks, templates, initialEditId, onSelectDay,
   saveEvent, deleteEvent, saveTask, saveTasks, deleteTask, saveTemplate, deleteTemplate,
   updateTemplate, onRequestBulkDelete, onEditingDone,
 }) {
@@ -22,7 +22,7 @@ export default function DayPanel({
     [initialEditId, events]
   );
   const activeEditing = editing ?? initialEditEvent;
-  const calendarEvents = [...(allEvents || events)].sort((a, b) => a.date.localeCompare(b.date));
+  const calendarEvents = [...events].sort((a, b) => a.title.localeCompare(b.title));
 
   const handleSave = (ev) => {
     saveEvent(ev);
@@ -40,7 +40,7 @@ export default function DayPanel({
 
       <div className="card day-events-card">
         <div className="card-head">
-          <h3>All events <span className="count-chip">{calendarEvents.length}</span></h3>
+          <h3>Events on this day <span className="count-chip">{calendarEvents.length}</span></h3>
           <div className="day-card-actions">
             {calendarEvents.length > 0 && (
               <>
@@ -77,7 +77,7 @@ export default function DayPanel({
           />
         )}
 
-        {calendarEvents.length === 0 && !activeEditing && <p className="muted">No events added yet. Add one for this day.</p>}
+        {calendarEvents.length === 0 && !activeEditing && <p className="muted">No events for this day yet. Add one to get started.</p>}
 
         {calendarEvents.length > 0 && (
           <div className="all-event-list">
@@ -97,9 +97,6 @@ export default function DayPanel({
                 </button>
                 <span className={`tag category-tag tone-${categoryTone(ev.category)}`}>{ev.category}</span>
                 <span className="calendar-event-date">{prettyDate(ev.date)}</span>
-                <button type="button" className="action-button event-view-day" onClick={() => onSelectDay?.(ev.date)}>
-                  <CalendarDays size={14} /> View day
-                </button>
               </article>
             ))}
           </div>
@@ -112,7 +109,6 @@ export default function DayPanel({
           key={date}
           date={date}
           tasks={tasks}
-          allTasks={allTasks}
           templates={templates}
           saveTask={saveTask}
           saveTasks={saveTasks}

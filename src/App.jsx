@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Toaster } from 'sonner';
-import { CalendarDays, LayoutDashboard, Upload } from 'lucide-react';
+import { BriefcaseBusiness, CalendarDays, LayoutDashboard, ListTodo, Upload } from 'lucide-react';
 import useAuth from './hooks/useAuth';
 import useCollection from './hooks/useCollection';
 import { supabase, cloudEnabled } from './lib/supabase';
@@ -15,6 +15,7 @@ import ProfileMenu from './components/ProfileMenu';
 import AppLoader from './components/AppLoader';
 import ConfirmDialog from './components/ConfirmDialog';
 import DetailModal from './components/DetailModal';
+import CollectionPage from './components/CollectionPage';
 import './App.css';
 
 function Main({ user }) {
@@ -209,6 +210,12 @@ function Main({ user }) {
             <button className={view === 'calendar' ? 'active' : ''} onClick={() => setView('calendar')}>
               <CalendarDays size={16} /> Calendar
             </button>
+            <button className={view === 'tasks' ? 'active' : ''} onClick={() => setView('tasks')}>
+              <ListTodo size={16} /> Tasks
+            </button>
+            <button className={view === 'events' ? 'active' : ''} onClick={() => setView('events')}>
+              <BriefcaseBusiness size={16} /> Events
+            </button>
           </nav>
           <button className="import-button" aria-label="Import / Export" onClick={() => setShowIO(true)}>
             <Upload size={16} /> <span>Import / Export</span>
@@ -241,17 +248,15 @@ function Main({ user }) {
             },
           })}
         />
-      ) : (
+      ) : view === 'calendar' ? (
         <div className="split">
           <Calendar key={selected.slice(0, 7)} events={events} tasks={tasks} selected={selected} onSelect={setSelected} />
           <DayPanel
             date={selected}
-            allEvents={events}
             initialEditId={editingEventId}
             events={events.filter((e) => e.date === selected)}
             onSelectDay={setSelected}
             tasks={tasks.filter((t) => t.date === selected)}
-            allTasks={tasks}
             templates={templates}
             saveEvent={saveEvent}
             deleteEvent={deleteEvent}
@@ -265,6 +270,24 @@ function Main({ user }) {
             onEditingDone={() => setEditingEventId(null)}
           />
         </div>
+      ) : (
+        <CollectionPage
+          type={view === 'tasks' ? 'task' : 'event'}
+          items={view === 'tasks' ? tasks : events}
+          saveTask={saveTask}
+          onView={(item) => setDetail({ type: view === 'tasks' ? 'task' : 'event', item })}
+          onRequestBulkDelete={(type, items) => requestBulkDelete(type, items)}
+          onRequestDelete={(target) => setConfirmState({
+            title: `Delete ${target.type}?`,
+            message: `Delete "${target.item.title}"? This cannot be undone.`,
+            confirmLabel: 'Delete',
+            tone: 'danger',
+            resolve: (confirmed) => {
+              if (confirmed) target.type === 'task' ? deleteTask(target.item.id) : deleteEvent(target.item.id);
+              setConfirmState(null);
+            },
+          })}
+        />
       )}
 
       {showIO && (
