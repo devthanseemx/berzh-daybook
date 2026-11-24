@@ -8,7 +8,7 @@ import DetailModal from './DetailModal';
 import { requestConfirmation } from '../lib/confirm';
 
 export default function DayPanel({
-  date, events, allEvents, tasks, templates, initialEditId, onSelectDay,
+  date, events, allEvents, tasks, allTasks, templates, initialEditId, onSelectDay,
   saveEvent, deleteEvent, saveTask, saveTasks, deleteTask, saveTemplate, deleteTemplate,
   updateTemplate, onRequestBulkDelete, onEditingDone,
 }) {
@@ -112,6 +112,7 @@ export default function DayPanel({
           key={date}
           date={date}
           tasks={tasks}
+          allTasks={allTasks}
           templates={templates}
           saveTask={saveTask}
           saveTasks={saveTasks}

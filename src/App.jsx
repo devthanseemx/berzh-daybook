@@ -251,6 +251,7 @@ function Main({ user }) {
             events={events.filter((e) => e.date === selected)}
             onSelectDay={setSelected}
             tasks={tasks.filter((t) => t.date === selected)}
+            allTasks={tasks}
             templates={templates}
             saveEvent={saveEvent}
             deleteEvent={deleteEvent}

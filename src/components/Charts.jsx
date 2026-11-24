@@ -15,9 +15,8 @@ const tip = {
 const areaCursor = { fill: 'rgba(128,128,128,0.08)' };
 const barCursor = { fill: 'rgba(128,128,128,0.12)' };
 
-export default function Charts({ events, tasks }) {
+export function TaskStatusChart({ tasks }) {
   const today = todayKey();
-
   const status = useMemo(() => {
     const done = tasks.filter((t) => t.done).length;
     const missed = tasks.filter((t) => !t.done && t.date < today).length;
@@ -28,10 +27,36 @@ export default function Charts({ events, tasks }) {
       { name: 'Missed', value: missed, color: COLOR.missed },
     ].filter((d) => d.value > 0);
   }, [tasks, today]);
-
   const doneCount = tasks.filter((t) => t.done).length;
   const rate = tasks.length ? Math.round((doneCount / tasks.length) * 100) : 0;
 
+  return (
+    <div className="card dashboard-card chart-card task-status-chart">
+      <div className="chart-heading">
+        <div className="dashboard-section-icon green"><CheckCircle2 size={17} /></div>
+        <div><h3>Task status</h3><p>How your tasks are going</p></div>
+      </div>
+      {tasks.length === 0 ? (
+        <p className="muted">Add some tasks to see this chart.</p>
+      ) : (
+        <>
+          <p className="muted">{rate}% of all tasks completed</p>
+          <ResponsiveContainer width="100%" height={180}>
+            <PieChart>
+              <Pie data={status} dataKey="value" nameKey="name" innerRadius={45} outerRadius={68} paddingAngle={2}>
+                {status.map((s) => <Cell key={s.name} fill={s.color} stroke="none" />)}
+              </Pie>
+              <Tooltip {...tip} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function Charts({ events, tasks }) {
   const days = useMemo(() => {
     const now = new Date();
     const countsByDay = new Map();
@@ -64,29 +89,6 @@ export default function Charts({ events, tasks }) {
 
   return (
     <section className="charts">
-      <div className="card dashboard-card chart-card">
-        <div className="chart-heading">
-          <div className="dashboard-section-icon green"><CheckCircle2 size={17} /></div>
-          <div><h3>Task status</h3><p>How your tasks are going</p></div>
-        </div>
-        {tasks.length === 0 ? (
-          <p className="muted">Add some tasks to see this chart.</p>
-        ) : (
-          <>
-            <p className="muted">{rate}% of all tasks completed</p>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={status} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
-                  {status.map((s) => <Cell key={s.name} fill={s.color} stroke="none" />)}
-                </Pie>
-                <Tooltip {...tip} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </>
-        )}
-      </div>
-
       <div className="card dashboard-card chart-card">
         <div className="chart-heading">
           <div className="dashboard-section-icon blue"><CalendarDays size={17} /></div>

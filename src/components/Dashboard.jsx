@@ -6,7 +6,7 @@ import {
 import { todayKey, shortDate, prettyDate, fmt12 } from '../utils/dates';
 import { categoryTone } from '../utils/categoryTone';
 import FilterBar from './FilterBar';
-import Charts from './Charts';
+import Charts, { TaskStatusChart } from './Charts';
 
 const STEP = 5;
 
@@ -161,15 +161,8 @@ export default function Dashboard({
     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
   const upcomingTasks = allUpcomingTasks.slice(0, 4);
 
-  const rangeTasks = tasks
-    .filter((task) => range === 'all' || (range === 'upcoming' ? task.date >= today : task.date < today));
-  const scheduleStatus = {
-    completed: rangeTasks.filter((task) => task.done).length,
-    missed: rangeTasks.filter((task) => !task.done && task.date < today).length,
-    pending: rangeTasks.filter((task) => !task.done && task.date >= today).length,
-  };
-  const scheduleTotal = rangeTasks.length;
-  const filtered = rangeTasks
+  const filtered = tasks
+    .filter((task) => range === 'all' || (range === 'upcoming' ? task.date >= today : task.date < today))
     .filter((t) => status === 'all' || (status === 'done' ? t.done : !t.done))
     .sort((a, b) => {
       const c = (a.date + a.start).localeCompare(b.date + b.start);
@@ -232,13 +225,13 @@ export default function Dashboard({
         <span>PRIORITIES</span>
         <h2>Tasks</h2>
       </div>
-      <div className={`dashboard-feature-grid ${missed.length ? 'has-missed-tasks' : ''}`}>
+      <div className="dashboard-feature-grid">
         <section className="card dashboard-card upcoming-tasks-card">
           <div className="dashboard-card-head">
             <div className="dashboard-section-icon blue"><ListTodo size={18} /></div>
             <div>
-              <p className="dashboard-kicker">COMING UP</p>
-              <h2>Next on your list</h2>
+              <h2>Upcoming tasks</h2>
+              <p>Your next time blocks</p>
             </div>
             <button className="upcoming-calendar-link" onClick={() => onOpenDay(today)}>
               View calendar <ArrowUpRight size={15} />
@@ -268,30 +261,10 @@ export default function Dashboard({
             </>
           )}
         </section>
-        {missed.length > 0 && (
-          <section className="card dashboard-card missed-card">
-            <div className="dashboard-card-head">
-              <div className="dashboard-section-icon red"><CircleAlert size={17} /></div>
-              <div><h2>Missed tasks</h2><p>Past tasks not marked complete</p></div>
-              <span className="count-chip">{missed.length}</span>
-            </div>
-            <p className="muted">Past tasks not ticked as done. Tick them if you finished them.</p>
-            <ul className="list">
-              {missed.map((t) => <TaskLine key={t.id} t={t} showDate startCollapsed {...lineProps} />)}
-            </ul>
-          </section>
-        )}
-      </div>
-
-      <div className="dashboard-section-divider">
-        <span>DAYBOOK</span>
-        <h2>Events</h2>
-      </div>
-      <div className="grid-2">
-        <section className="card dashboard-card">
+        <section className="card dashboard-card upcoming-events-card">
           <div className="dashboard-card-head">
             <div className="dashboard-section-icon violet"><CalendarDays size={17} /></div>
-            <div><h2>Upcoming events</h2><p>What’s next on your calendar</p></div>
+            <div><h2>Upcoming events</h2><p>Dates on your calendar</p></div>
             <span className="count-chip">{upcomingAll.length}</span>
           </div>
           {upcomingAll.length === 0 ? (
@@ -325,7 +298,30 @@ export default function Dashboard({
           )}
         </section>
 
-        <section className="card dashboard-card">
+        <section className="card dashboard-card missed-card">
+          <div className="dashboard-card-head">
+            <div className="dashboard-section-icon red"><CircleAlert size={17} /></div>
+            <div><h2>Missed tasks</h2><p>Past tasks not marked complete</p></div>
+            <span className="count-chip">{missed.length}</span>
+          </div>
+          {missed.length === 0 ? (
+            <div className="dashboard-empty"><CheckCircle2 size={19} /><p>No missed tasks. You’re all caught up.</p></div>
+          ) : (
+            <ul className="list">
+              {missed.map((task) => (
+                <TaskLine key={task.id} t={task} showDate startCollapsed {...lineProps} />
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      <div className="dashboard-section-divider">
+        <span>YOUR DAYBOOK</span>
+        <h2>Recent events and schedule</h2>
+      </div>
+      <div className="dashboard-lower-grid">
+        <section className="card dashboard-card recent-events-card">
           <div className="dashboard-card-head">
             <div className="dashboard-section-icon amber"><BriefcaseBusiness size={17} /></div>
             <div><h2>Recent events</h2><p>Moments you’ve logged</p></div>
@@ -346,11 +342,11 @@ export default function Dashboard({
                 )}
               </div>
               <ul className="list">
-                {recentAll.slice(0, recLimit).map((e) => (
+                {recentAll.slice(0, recLimit).map((event) => (
                   <EventRow
-                    key={e.id}
-                    ev={e}
-                    selected={selectedEventIds.includes(e.id)}
+                    key={event.id}
+                    ev={event}
+                    selected={selectedEventIds.includes(event.id)}
                     onToggleSelect={(id) => toggleSelected(setSelectedEventIds, id)}
                     onView={(item) => onViewEvent(item)}
                     onRequestDelete={(item) => onRequestDelete({ type: 'event', item })}
@@ -361,13 +357,10 @@ export default function Dashboard({
             </>
           )}
         </section>
-      </div>
 
-      <div className="dashboard-section-divider">
-        <span>PLAN</span>
-        <h2>Schedule</h2>
-      </div>
-      <section className="card dashboard-card schedule-card">
+        <div className="schedule-overview">
+          <TaskStatusChart tasks={tasks} />
+          <section className="card dashboard-card schedule-card">
         <div className="section-head dashboard-card-head">
           <div className="dashboard-section-icon blue"><ListTodo size={18} /></div>
           <div className="dashboard-section-copy">
@@ -381,29 +374,6 @@ export default function Dashboard({
           />
         </div>
 
-        <div className="schedule-layout-grid">
-          <aside className="task-status-card">
-            <div className="task-status-card-heading">
-              <span className="dashboard-section-icon green"><CheckCircle2 size={17} /></span>
-              <div><h3>Task status</h3><p>{range === 'all' ? 'All dates' : range === 'upcoming' ? 'Upcoming tasks' : 'Past tasks'}</p></div>
-            </div>
-            <div className="task-status-meter" role="img" aria-label={`${scheduleStatus.completed} completed, ${scheduleStatus.pending} pending, ${scheduleStatus.missed} missed`}>
-              {scheduleTotal > 0 && (
-                <>
-                  <span className="complete" style={{ width: `${(scheduleStatus.completed / scheduleTotal) * 100}%` }} />
-                  <span className="pending" style={{ width: `${(scheduleStatus.pending / scheduleTotal) * 100}%` }} />
-                  <span className="missed" style={{ width: `${(scheduleStatus.missed / scheduleTotal) * 100}%` }} />
-                </>
-              )}
-            </div>
-            <div className="task-status-legend">
-              <span><i className="complete" />Completed <b>{scheduleStatus.completed}</b></span>
-              <span><i className="pending" />Pending <b>{scheduleStatus.pending}</b></span>
-              <span><i className="missed" />Missed <b>{scheduleStatus.missed}</b></span>
-            </div>
-            {scheduleTotal === 0 && <p className="task-status-empty">No tasks in this date range yet.</p>}
-          </aside>
-          <div className="schedule-list-column">
             {days.length === 0 ? (
               <div className="dashboard-empty"><Clock3 size={19} /><p>No time blocks match this filter.</p></div>
             ) : (
@@ -437,9 +407,9 @@ export default function Dashboard({
               </>
             )}
             <MoreButtons limit={dayLimit} total={allDays.length} setLimit={setDayLimit} />
-          </div>
+          </section>
         </div>
-      </section>
+      </div>
 
       <div className="dashboard-section-divider">
         <span>INSIGHTS</span>

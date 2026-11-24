@@ -3,7 +3,7 @@ import { ChevronDown, ChevronRight, Plus, Star, Trash2 } from 'lucide-react';
 import TimeWheel from './TimeWheel';
 import FilterBar from './FilterBar';
 import { notify } from '../lib/notify';
-import { fmt12, getTaskDates, pad } from '../utils/dates';
+import { fmt12, getTaskDates, pad, shortDate } from '../utils/dates';
 import { requestConfirmation } from '../lib/confirm';
 import SavedTaskEditorModal from './SavedTaskEditorModal';
 
@@ -17,7 +17,7 @@ const snap5 = (t) => {
   return `${pad(h)}:${pad(Math.min(55, Math.round(m / 5) * 5))}`;
 };
 
-function TaskItem({ t, starred, selected, onToggleSelect, saveTask, deleteTask, saveTemplate }) {
+function TaskItem({ t, starred, selected, onToggleSelect, saveTask, deleteTask, saveTemplate, showDate }) {
   const [sub, setSub] = useState('');
   const [subsOpen, setSubsOpen] = useState(true);
   const subs = t.subtasks || [];
@@ -49,7 +49,7 @@ function TaskItem({ t, starred, selected, onToggleSelect, saveTask, deleteTask, 
           onChange={() => onToggleSelect(t.id)}
         />
         <input type="checkbox" checked={t.done} aria-label={`Mark ${t.title} as complete`} onChange={() => saveTask({ ...t, done: !t.done })} />
-        <span className="row-date">{fmt12(t.start)} – {fmt12(t.end)}</span>
+        <span className="row-date">{showDate ? `${shortDate(t.date)} · ` : ''}{fmt12(t.start)} – {fmt12(t.end)}</span>
         <span className="row-title">{t.title}</span>
         {subs.length > 0 ? (
           <button
@@ -106,11 +106,12 @@ function TaskItem({ t, starred, selected, onToggleSelect, saveTask, deleteTask, 
 }
 
 export default function TaskPlanner({
-  date, tasks, templates, saveTask, saveTasks, deleteTask, saveTemplate, deleteTemplate,
+  date, tasks, allTasks = tasks, templates, saveTask, saveTasks, deleteTask, saveTemplate, deleteTemplate,
   updateTemplate, onRequestBulkDelete,
 }) {
-  const sorted = [...tasks].sort((a, b) => a.start.localeCompare(b.start));
-  const lastEnd = snap5(sorted.length ? sorted[sorted.length - 1].end : '09:00');
+  const dayTasks = [...tasks].sort((a, b) => a.start.localeCompare(b.start));
+  const sorted = [...allTasks].sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  const lastEnd = snap5(dayTasks.length ? dayTasks[dayTasks.length - 1].end : '09:00');
 
   const [start, setStart] = useState(lastEnd);
   const [end, setEnd] = useState(addHour(lastEnd));
@@ -126,7 +127,10 @@ export default function TaskPlanner({
 
   const shown = sorted
     .filter((t) => status === 'all' || (status === 'done' ? t.done : !t.done))
-    .sort((a, b) => (order === 'asc' ? a.start.localeCompare(b.start) : b.start.localeCompare(a.start)));
+    .sort((a, b) => {
+      const byDateAndTime = (a.date + a.start).localeCompare(b.date + b.start);
+      return order === 'asc' ? byDateAndTime : -byDateAndTime;
+    });
   const toggleSelection = (setIds, id) => setIds((current) =>
     current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
   );
@@ -202,27 +206,36 @@ export default function TaskPlanner({
         </div>
       </form>
 
-      {sorted.length > 1 && (
-        <div className="section-head" style={{ marginTop: 14 }}>
-          <span className="muted">{shown.length} of {sorted.length} tasks</span>
-          <FilterBar status={status} setStatus={setStatus} order={order} setOrder={setOrder} />
+      <div className="section-head planner-task-heading">
+        <div>
+          <strong>All tasks</strong>
+          <span className="muted">{shown.length} of {sorted.length} tasks across all dates</span>
         </div>
+        {sorted.length > 0 && <FilterBar status={status} setStatus={setStatus} order={order} setOrder={setOrder} />}
+      </div>
+
+      {sorted.length > 0 ? (
+        <div className="all-task-list">
+          <ul className="list">
+            {shown.map((t) => (
+              <TaskItem
+                key={t.id}
+                t={t}
+                showDate
+                starred={isStarred(t)}
+                selected={selectedTaskIds.includes(t.id)}
+                onToggleSelect={(id) => toggleSelection(setSelectedTaskIds, id)}
+                saveTask={saveTask}
+                deleteTask={deleteTask}
+                saveTemplate={saveTemplate}
+              />
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="muted">No time blocks yet. Add one above or reuse a saved task.</p>
       )}
 
-      <ul className="list">
-        {shown.map((t) => (
-          <TaskItem
-            key={t.id}
-            t={t}
-            starred={isStarred(t)}
-            selected={selectedTaskIds.includes(t.id)}
-            onToggleSelect={(id) => toggleSelection(setSelectedTaskIds, id)}
-            saveTask={saveTask}
-            deleteTask={deleteTask}
-            saveTemplate={saveTemplate}
-          />
-        ))}
-      </ul>
       {shown.length > 0 && (
         <div className="bulk-actions planner-bulk-actions">
           <button className="bulk-select-all" onClick={() => toggleAllSelection(setSelectedTaskIds, shown, selectedTaskIds)}>
@@ -238,7 +251,6 @@ export default function TaskPlanner({
           )}
         </div>
       )}
-      {sorted.length === 0 && <p className="muted">No time blocks for this day yet.</p>}
       {sorted.length > 0 && shown.length === 0 && <p className="muted">No tasks match this filter.</p>}
 
       <details
