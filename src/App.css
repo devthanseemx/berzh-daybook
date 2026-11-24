@@ -3746,6 +3746,85 @@ button svg,
 .saved-task-edit-form .description-field-heading label {
   margin: 0;
 }
+.task-editor-modal {
+  width: min(680px, 100%);
+}
+.task-editor-form {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.task-editor-form .detail-body {
+  display: grid;
+  gap: 16px;
+}
+.task-editor-field {
+  display: grid;
+  gap: 7px;
+  color: #596477;
+  font-size: 12px;
+  font-weight: 600;
+}
+.task-editor-field > span,
+.task-editor-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.task-editor-field > input {
+  width: min(100%, 340px);
+  min-height: 42px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 400;
+}
+.task-editor-section-title {
+  margin-bottom: 8px;
+  color: #596477;
+  font-size: 12px;
+  font-weight: 600;
+}
+.task-edit-time-pick {
+  gap: 18px;
+  margin: 0;
+}
+.task-editor-modal .wheel-box {
+  min-height: 132px;
+  padding: 0 12px;
+  border-color: #e3e6ee;
+  border-radius: 10px;
+  background: #fbfcfe;
+}
+.task-editor-modal .wheel-col {
+  width: 52px;
+  height: 120px;
+  scroll-behavior: smooth;
+}
+.task-editor-modal .wheel-pad {
+  height: 40px;
+}
+.task-editor-modal .wheel-item {
+  height: 40px;
+  line-height: 40px;
+  font-size: 13px;
+}
+.task-editor-modal .wheel-item.on {
+  color: #5145e5;
+  font-size: 16px;
+  font-weight: 700;
+}
+.task-editor-modal .wheel-band {
+  top: 40px;
+  height: 40px;
+  border-top-color: #dedaff;
+  border-bottom-color: #dedaff;
+  border-radius: 4px;
+  background: rgba(81, 69, 229, 0.035);
+}
+.task-editor-modal .detail-actions {
+  flex: 0 0 auto;
+}
 .saved-task-edit-form input,
 .saved-task-edit-form textarea {
   width: 100%;

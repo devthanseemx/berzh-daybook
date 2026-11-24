@@ -16,6 +16,7 @@ import AppLoader from './components/AppLoader';
 import ConfirmDialog from './components/ConfirmDialog';
 import DetailModal from './components/DetailModal';
 import CollectionPage from './components/CollectionPage';
+import TaskEditorModal from './components/TaskEditorModal';
 import './App.css';
 
 function Main({ user }) {
@@ -28,6 +29,7 @@ function Main({ user }) {
   const [showIO, setShowIO] = useState(false);
   const [confirmState, setConfirmState] = useState(null);
   const [detail, setDetail] = useState(null);
+  const [editingTask, setEditingTask] = useState(null);
   const [editingEventId, setEditingEventId] = useState(null);
 
   useEffect(() => {
@@ -320,7 +322,11 @@ function Main({ user }) {
           onClose={() => setDetail(null)}
           onEdit={(entry) => {
             setDetail(null);
-            openDay(entry.item.date, entry.type === 'event' ? entry.item.id : null);
+            if (entry.type === 'task') {
+              setEditingTask(entry.item);
+              return;
+            }
+            openDay(entry.item.date, entry.item.id);
           }}
           onOpenCalendar={(date) => {
             setDetail(null);
@@ -337,6 +343,17 @@ function Main({ user }) {
               setDetail(null);
             },
           })}
+        />
+      )}
+      {editingTask && (
+        <TaskEditorModal
+          task={editingTask}
+          onClose={() => setEditingTask(null)}
+          onSave={(updatedTask) => {
+            saveTask(updatedTask);
+            notify.success('Task updated');
+            setEditingTask(null);
+          }}
         />
       )}
     </div>
