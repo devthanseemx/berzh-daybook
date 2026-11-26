@@ -3,9 +3,9 @@ import { CheckCircle2 } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { todayKey } from '../utils/dates';
 
-const COLOR = { done: '#10b981', pending: '#5145e5', missed: '#ef4444' };
+const COLOR = { done: 'var(--success)', pending: 'var(--accent)', missed: 'var(--danger)' };
 const tip = {
-  contentStyle: { background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8 },
+  contentStyle: { background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-control)' },
   labelStyle: { color: 'var(--text)' },
   itemStyle: { color: 'var(--text)' },
 };

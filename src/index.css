@@ -1,7 +1,7 @@
 :root {
-  font-family: 'Inter', sans-serif;
-  color: #172033;
-  background: #fff;
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--bg);
   color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -29,7 +29,7 @@ body,
 body,
 button,
 input {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
 }
 
 button,
@@ -41,7 +41,28 @@ button {
   cursor: pointer;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+}
+
+button,
+input,
+select,
+textarea {
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease;
+}
+
 ::selection {
-  color: #fff;
-  background: #5145e5;
+  color: var(--on-accent);
+  background: var(--accent);
 }
