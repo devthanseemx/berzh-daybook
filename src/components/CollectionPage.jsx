@@ -7,6 +7,7 @@ export default function CollectionPage({
   type, items, onView, saveTask, onRequestDelete, onRequestBulkDelete,
 }) {
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectionMode, setSelectionMode] = useState(false);
   const isTask = type === 'task';
   const sortedItems = useMemo(() => [...items].sort((a, b) => {
     const first = isTask ? `${a.date}${a.start}` : a.date;
@@ -22,7 +23,7 @@ export default function CollectionPage({
   );
 
   return (
-    <main className="collection-page">
+    <main className={`collection-page ${selectionMode ? 'selection-mode' : ''}`}>
       <header className="collection-page-heading">
         <div>
           <p className="dashboard-kicker">YOUR DAYBOOK</p>
@@ -48,6 +49,20 @@ export default function CollectionPage({
               <button
                 type="button"
                 className="bulk-select-all"
+                aria-pressed={selectionMode}
+                onClick={() => {
+                  if (selectionMode) setSelectedIds([]);
+                  setSelectionMode((active) => !active);
+                }}
+              >
+                {selectionMode ? 'Done' : 'Select items'}
+              </button>
+            )}
+            {selectionMode && sortedItems.length > 0 && (
+              <button
+                type="button"
+                className="bulk-select-all"
+                aria-pressed={allSelected}
                 onClick={() => setSelectedIds(allSelected ? [] : sortedItems.map((item) => item.id))}
               >
                 {allSelected ? 'Clear selection' : 'Select all'}
@@ -73,14 +88,7 @@ export default function CollectionPage({
         ) : (
           <ul className={`collection-list ${isTask ? 'task-collection-list' : 'event-collection-list'}`}>
             {sortedItems.map((item) => (
-              <li className="collection-row" key={item.id}>
-                <input
-                  type="checkbox"
-                  className="bulk-select"
-                  checked={selectedIds.includes(item.id)}
-                  aria-label={`Select ${isTask ? 'task' : 'event'} ${item.title}`}
-                  onChange={() => toggleSelected(item.id)}
-                />
+              <li className={`collection-row ${selectedIds.includes(item.id) ? 'is-selected' : ''}`} key={item.id}>
                 {isTask && (
                   <input
                     type="checkbox"
@@ -90,7 +98,18 @@ export default function CollectionPage({
                   />
                 )}
                 <span className="collection-date">{prettyDate(item.date)}</span>
-                <button type="button" className="collection-item-title" onClick={() => onView(item)}>
+                <button
+                  type="button"
+                  className="collection-item-title"
+                  aria-pressed={selectionMode ? selectedIds.includes(item.id) : undefined}
+                  aria-label={selectionMode
+                    ? `${selectedIds.includes(item.id) ? 'Deselect' : 'Select'} ${isTask ? 'task' : 'event'} ${item.title}`
+                    : `Open ${isTask ? 'task' : 'event'} ${item.title}`}
+                  onClick={() => {
+                    if (selectionMode) toggleSelected(item.id);
+                    else onView(item);
+                  }}
+                >
                   {item.title}
                   {isTask && item.description && <small>{item.description}</small>}
                 </button>

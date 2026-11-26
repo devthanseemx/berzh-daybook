@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { pad } from '../utils/dates';
+import { fmt12, pad } from '../utils/dates';
 
 const ITEM = 40; // px, must match .wheel-item height in the CSS
 const HOURS = Array.from({ length: 12 }, (_, i) => pad(i + 1));
 const MINUTES = Array.from({ length: 12 }, (_, i) => pad(i * 5));
 const AMPM = ['AM', 'PM'];
 
-function Column({ items, value, onChange }) {
+function Column({ items, value, onChange, label }) {
   const ref = useRef(null);
   const timer = useRef(null);
   const latest = useRef({ value, onChange });
@@ -41,8 +41,34 @@ function Column({ items, value, onChange }) {
     el.scrollTo({ top: el.scrollTop + direction * ITEM, behavior: 'smooth' });
   };
 
+  const onKeyDown = (event) => {
+    let nextIndex;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') nextIndex = Math.min(items.length - 1, idx + 1);
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') nextIndex = Math.max(0, idx - 1);
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = items.length - 1;
+    else return;
+
+    event.preventDefault();
+    clearTimeout(timer.current);
+    if (nextIndex !== idx) onChange(items[nextIndex]);
+  };
+
   return (
-    <div className="wheel-col" ref={ref} onScroll={onScroll} onWheel={onWheel}>
+    <div
+      className="wheel-col"
+      ref={ref}
+      role="spinbutton"
+      tabIndex={0}
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={items.length - 1}
+      aria-valuenow={idx}
+      aria-valuetext={value}
+      onKeyDown={onKeyDown}
+      onScroll={onScroll}
+      onWheel={onWheel}
+    >
       <div className="wheel-pad" />
       {items.map((it) => (
         <div key={it} className={`wheel-item ${it === value ? 'on' : ''}`} onClick={() => onChange(it)}>
@@ -67,12 +93,17 @@ export default function TimeWheel({ value, onChange, label }) {
 
   return (
     <div className="wheel">
-      {label && <span className="wheel-label">{label}</span>}
+      {label && (
+        <div className="wheel-heading">
+          <span className="wheel-label">{label}</span>
+          <output className="wheel-selected-time">{fmt12(value)}</output>
+        </div>
+      )}
       <div className="wheel-box">
-        <Column items={HOURS} value={hour} onChange={(v) => emit(v, min, ap)} />
+        <Column items={HOURS} value={hour} label={`${label} hour`} onChange={(v) => emit(v, min, ap)} />
         <span className="wheel-colon">:</span>
-        <Column items={MINUTES} value={min} onChange={(v) => emit(hour, v, ap)} />
-        <Column items={AMPM} value={ap} onChange={(v) => emit(hour, min, v)} />
+        <Column items={MINUTES} value={min} label={`${label} minutes`} onChange={(v) => emit(hour, v, ap)} />
+        <Column items={AMPM} value={ap} label={`${label} AM/PM`} onChange={(v) => emit(hour, min, v)} />
         <div className="wheel-band" />
       </div>
     </div>

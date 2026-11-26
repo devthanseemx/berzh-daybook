@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Star, Trash2 } from 'lucide-react';
+import { CalendarPlus, CheckCircle2, ChevronDown, ChevronRight, Circle, Plus, Star, Trash2 } from 'lucide-react';
 import TimeWheel from './TimeWheel';
 import FilterBar from './FilterBar';
 import { notify } from '../lib/notify';
@@ -18,7 +18,7 @@ const snap5 = (t) => {
   return `${pad(h)}:${pad(Math.min(55, Math.round(m / 5) * 5))}`;
 };
 
-function TaskItem({ t, starred, selected, onToggleSelect, saveTask, deleteTask, saveTemplate }) {
+function TaskItem({ t, starred, selected, selectionMode, onToggleSelect, saveTask, deleteTask, saveTemplate }) {
   const [sub, setSub] = useState('');
   const [subsOpen, setSubsOpen] = useState(true);
   const subs = t.subtasks || [];
@@ -41,17 +41,24 @@ function TaskItem({ t, starred, selected, onToggleSelect, saveTask, deleteTask, 
   };
 
   return (
-    <li className="task">
+    <li className={`task ${selected ? 'is-selected' : ''}`}>
       <div className={`row ${t.done ? 'done' : ''}`}>
-        <input
-          type="checkbox"
-          checked={selected}
-          aria-label={`Select task ${t.title}`}
-          onChange={() => onToggleSelect(t.id)}
-        />
         <input type="checkbox" checked={t.done} aria-label={`Mark ${t.title} as complete`} onChange={() => saveTask({ ...t, done: !t.done })} />
         <span className="row-date">{fmt12(t.start)} – {fmt12(t.end)}</span>
-        <span className="row-title">{t.title}</span>
+        {selectionMode ? (
+          <button
+            type="button"
+            className="row-title task-selection-button"
+            aria-pressed={selected}
+            aria-label={`${selected ? 'Deselect' : 'Select'} task ${t.title}`}
+            onClick={() => onToggleSelect(t.id)}
+          >
+            {selected ? <CheckCircle2 size={16} aria-hidden="true" /> : <Circle size={16} aria-hidden="true" />}
+            {t.title}
+          </button>
+        ) : (
+          <span className="row-title">{t.title}</span>
+        )}
         {subs.length > 0 ? (
           <button
             type="button"
@@ -121,6 +128,7 @@ export default function TaskPlanner({
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [templatesOpen, setTemplatesOpen] = useState(true);
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
+  const [taskSelectionMode, setTaskSelectionMode] = useState(false);
   const [selectedTemplateIds, setSelectedTemplateIds] = useState([]);
   const [status, setStatus] = useState('all');
   const [order, setOrder] = useState('asc');
@@ -182,7 +190,9 @@ export default function TaskPlanner({
     );
 
   return (
-    <div>
+    <>
+      <section className="card day-time-card">
+        <h3 className="time-plan-title"><CalendarPlus size={18} aria-hidden="true" /> Time plan</h3>
       <form onSubmit={add}>
         <div className="time-pick">
           <TimeWheel label="Start" value={start} onChange={setStart} />
@@ -201,7 +211,9 @@ export default function TaskPlanner({
           <button type="submit" className="primary action-button"><Plus size={16} /> Add task</button>
         </div>
       </form>
+      </section>
 
+      <section className="card day-task-card">
       <div className="section-head planner-task-heading">
         <div>
           <strong>Tasks on this day</strong>
@@ -219,6 +231,7 @@ export default function TaskPlanner({
                 t={t}
                 starred={isStarred(t)}
                 selected={selectedTaskIds.includes(t.id)}
+                selectionMode={taskSelectionMode}
                 onToggleSelect={(id) => toggleSelection(setSelectedTaskIds, id)}
                 saveTask={saveTask}
                 deleteTask={deleteTask}
@@ -233,10 +246,26 @@ export default function TaskPlanner({
 
       {shown.length > 0 && (
         <div className="bulk-actions planner-bulk-actions">
-          <button className="bulk-select-all" onClick={() => toggleAllSelection(setSelectedTaskIds, shown, selectedTaskIds)}>
-            {shown.every((task) => selectedTaskIds.includes(task.id)) ? 'Clear selection' : 'Select visible'}
+          <button
+            className="bulk-select-all"
+            aria-pressed={taskSelectionMode}
+            onClick={() => {
+              if (taskSelectionMode) setSelectedTaskIds([]);
+              setTaskSelectionMode((active) => !active);
+            }}
+          >
+            {taskSelectionMode ? 'Done' : 'Select items'}
           </button>
-          {shown.some((task) => selectedTaskIds.includes(task.id)) && (
+          {taskSelectionMode && (
+            <button
+              className="bulk-select-all"
+              aria-pressed={shown.every((task) => selectedTaskIds.includes(task.id))}
+              onClick={() => toggleAllSelection(setSelectedTaskIds, shown, selectedTaskIds)}
+            >
+              {shown.every((task) => selectedTaskIds.includes(task.id)) ? 'Clear selection' : 'Select visible'}
+            </button>
+          )}
+          {taskSelectionMode && shown.some((task) => selectedTaskIds.includes(task.id)) && (
             <button
               className="action-button danger-button"
               onClick={() => onRequestBulkDelete('task', shown.filter((task) => selectedTaskIds.includes(task.id)))}
@@ -247,7 +276,9 @@ export default function TaskPlanner({
         </div>
       )}
       {sorted.length > 0 && shown.length === 0 && <p className="muted">No tasks match this filter.</p>}
+      </section>
 
+      <section className="saved-tasks-card">
       <details
         className="templates"
         open={templatesOpen}
@@ -368,6 +399,7 @@ export default function TaskPlanner({
           setEditingTemplate(null);
         }}
       />
-    </div>
+      </section>
+    </>
   );
 }

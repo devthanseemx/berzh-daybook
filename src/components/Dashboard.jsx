@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   ArrowUpRight, BriefcaseBusiness, CalendarDays, CheckCircle2, ChevronDown,
-  ChevronRight, CircleAlert, Clock3, ListTodo, Trash2, TrendingUp,
+  ChevronRight, Circle, CircleAlert, Clock3, ListTodo, Trash2, TrendingUp,
 } from 'lucide-react';
 import { todayKey, shortDate, prettyDate, fmt12 } from '../utils/dates';
 import { categoryTone } from '../utils/categoryTone';
@@ -23,18 +23,19 @@ function MoreButtons({ limit, total, setLimit }) {
   );
 }
 
-function EventRow({ ev, onView, onRequestDelete, selected, onToggleSelect }) {
+function EventRow({ ev, onView, onRequestDelete, selected, selectionMode, onToggleSelect }) {
   return (
-    <li className="row event-row nopointer">
-      <input
-        className="bulk-select"
-        type="checkbox"
-        checked={selected}
-        aria-label={`Select event ${ev.title}`}
-        onChange={() => onToggleSelect(ev.id)}
-      />
+    <li className={`row event-row nopointer ${selected ? 'is-selected' : ''}`}>
       <button type="button" className="row-date link-ish row-detail-button" onClick={() => onView(ev)}>{shortDate(ev.date)}</button>
-      <button type="button" className="row-title link-ish row-detail-button" onClick={() => onView(ev)}>{ev.title}</button>
+      <button
+        type="button"
+        className="row-title link-ish row-detail-button"
+        aria-pressed={selectionMode ? selected : undefined}
+        aria-label={selectionMode ? `${selected ? 'Deselect' : 'Select'} event ${ev.title}` : `Open event ${ev.title}`}
+        onClick={() => selectionMode ? onToggleSelect(ev.id) : onView(ev)}
+      >
+        {ev.title}
+      </button>
       <span className={`tag category-tag tone-${categoryTone(ev.category)}`}>{ev.category}</span>
       <button
         className="icon row-action"
@@ -47,29 +48,36 @@ function EventRow({ ev, onView, onRequestDelete, selected, onToggleSelect }) {
   );
 }
 
-function TaskLine({ t, saveTask, onRequestDelete, onView, showDate, selected, onToggleSelect, startCollapsed = false }) {
+function TaskLine({ t, saveTask, onRequestDelete, onView, showDate, selected, selectionMode, onToggleSelect, startCollapsed = false }) {
   const [open, setOpen] = useState(!startCollapsed);
   const subs = t.subtasks || [];
   const toggleSub = (id) =>
     saveTask({ ...t, subtasks: subs.map((s) => (s.id === id ? { ...s, done: !s.done } : s)) });
 
   return (
-    <li className="task">
-      <div className={`row nopointer ${t.done ? 'done' : ''}`}>
-        {onToggleSelect ? (
-          <input
-            className="bulk-select"
-            type="checkbox"
-            checked={selected}
-            aria-label={`Select task ${t.title}`}
-            onChange={() => onToggleSelect(t.id)}
-          />
-        ) : <span className="bulk-select-placeholder" aria-hidden="true" />}
+    <li className={`task ${selected ? 'is-selected' : ''}`}>
+      <div className={`row nopointer ${t.done ? 'done' : ''} ${showDate ? 'task-with-date' : ''}`}>
         <input type="checkbox" checked={t.done} aria-label={`Mark ${t.title} as complete`} onChange={() => saveTask({ ...t, done: !t.done })} />
-        <button type="button" className="row-date task-time link-ish row-detail-button" onClick={() => onView(t)}>
-          {showDate ? `${shortDate(t.date)} · ` : ''}{fmt12(t.start)} – {fmt12(t.end)}
-        </button>
-        <button type="button" className="row-title link-ish row-detail-button" onClick={() => onView(t)}>{t.title}</button>
+        {showDate && (
+          <button type="button" className="row-date link-ish row-detail-button" onClick={() => onView(t)}>
+            {shortDate(t.date)}
+          </button>
+        )}
+        <span className="row-time">{fmt12(t.start)} – {fmt12(t.end)}</span>
+        {selectionMode ? (
+          <button
+            type="button"
+            className="row-title link-ish row-detail-button task-selection-button"
+            aria-pressed={selected}
+            aria-label={`${selected ? 'Deselect' : 'Select'} task ${t.title}`}
+            onClick={() => onToggleSelect(t.id)}
+          >
+            {selected ? <CheckCircle2 size={16} aria-hidden="true" /> : <Circle size={16} aria-hidden="true" />}
+            {t.title}
+          </button>
+        ) : (
+          <button type="button" className="row-title link-ish row-detail-button" onClick={() => onView(t)}>{t.title}</button>
+        )}
         {subs.length > 0 ? (
           <button
             className="subtask-count"
@@ -105,23 +113,21 @@ function TaskLine({ t, saveTask, onRequestDelete, onView, showDate, selected, on
   );
 }
 
-function UpcomingTaskRow({ task, onView, saveTask, selected, onToggleSelect }) {
+function UpcomingTaskRow({ task, onView, saveTask, selected, selectionMode, onToggleSelect }) {
   return (
-    <li className="upcoming-task-row">
-      <input
-        type="checkbox"
-        className="bulk-select"
-        checked={selected}
-        aria-label={`Select task ${task.title}`}
-        onChange={() => onToggleSelect(task.id)}
-      />
+    <li className={`upcoming-task-row ${selected ? 'is-selected' : ''}`}>
       <input
         type="checkbox"
         checked={task.done}
         aria-label={`Mark ${task.title} as complete`}
         onChange={() => saveTask({ ...task, done: !task.done })}
       />
-      <button className="upcoming-task-detail" onClick={() => onView(task)}>
+      <button
+        className="upcoming-task-detail"
+        aria-pressed={selectionMode ? selected : undefined}
+        aria-label={selectionMode ? `${selected ? 'Deselect' : 'Select'} task ${task.title}` : `Open task ${task.title}`}
+        onClick={() => selectionMode ? onToggleSelect(task.id) : onView(task)}
+      >
         <span className="upcoming-task-title">{task.title}</span>
         <span className="upcoming-task-meta">
           <span>{shortDate(task.date)}</span>
@@ -148,6 +154,11 @@ export default function Dashboard({
   const [selectedTaskIds, setSelectedTaskIds] = useState([]);
   const [selectedUpcomingTaskIds, setSelectedUpcomingTaskIds] = useState([]);
   const [selectedMissedTaskIds, setSelectedMissedTaskIds] = useState([]);
+  const [upcomingTaskSelectionMode, setUpcomingTaskSelectionMode] = useState(false);
+  const [upcomingEventSelectionMode, setUpcomingEventSelectionMode] = useState(false);
+  const [missedTaskSelectionMode, setMissedTaskSelectionMode] = useState(false);
+  const [recentEventSelectionMode, setRecentEventSelectionMode] = useState(false);
+  const [scheduleSelectionMode, setScheduleSelectionMode] = useState(false);
 
   const toggleSelected = (setIds, id) => setIds((current) =>
     current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
@@ -254,11 +265,20 @@ export default function Dashboard({
               <button
                 className="bulk-select-all"
                 disabled={upcomingTasks.length === 0}
-                onClick={() => toggleAllSelected(setSelectedUpcomingTaskIds, upcomingTasks, selectedUpcomingTaskIds)}
+                aria-pressed={upcomingTaskSelectionMode}
+                onClick={() => {
+                  if (upcomingTaskSelectionMode) setSelectedUpcomingTaskIds([]);
+                  setUpcomingTaskSelectionMode((active) => !active);
+                }}
               >
-                {upcomingTasks.length > 0 && upcomingTasks.every((task) => selectedUpcomingTaskIds.includes(task.id)) ? 'Clear selection' : 'Select visible'}
+                {upcomingTaskSelectionMode ? 'Done' : 'Select items'}
               </button>
-              {selectedUpcomingTasks.length > 0 && (
+              {upcomingTaskSelectionMode && (
+                <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedUpcomingTaskIds, upcomingTasks, selectedUpcomingTaskIds)}>
+                  {upcomingTasks.length > 0 && upcomingTasks.every((task) => selectedUpcomingTaskIds.includes(task.id)) ? 'Clear selection' : 'Select visible'}
+                </button>
+              )}
+              {upcomingTaskSelectionMode && selectedUpcomingTasks.length > 0 && (
                 <button className="action-button danger-button" onClick={() => onRequestBulkDelete('task', selectedUpcomingTasks)}>
                   <Trash2 size={14} /> Delete ({selectedUpcomingTasks.length})
                 </button>
@@ -280,6 +300,7 @@ export default function Dashboard({
                     onView={(item) => onViewTask(item)}
                     saveTask={saveTask}
                     selected={selectedUpcomingTaskIds.includes(task.id)}
+                    selectionMode={upcomingTaskSelectionMode}
                     onToggleSelect={(id) => toggleSelected(setSelectedUpcomingTaskIds, id)}
                   />
                 ))}
@@ -305,11 +326,20 @@ export default function Dashboard({
               <button
                 className="bulk-select-all"
                 disabled={visibleUpcomingEvents.length === 0}
-                onClick={() => toggleAllSelected(setSelectedEventIds, visibleUpcomingEvents, selectedEventIds)}
+                aria-pressed={upcomingEventSelectionMode}
+                onClick={() => {
+                  if (upcomingEventSelectionMode) setSelectedEventIds([]);
+                  setUpcomingEventSelectionMode((active) => !active);
+                }}
               >
-                {visibleUpcomingEvents.length > 0 && visibleUpcomingEvents.every((event) => selectedEventIds.includes(event.id)) ? 'Clear selection' : 'Select visible'}
+                {upcomingEventSelectionMode ? 'Done' : 'Select items'}
               </button>
-              {selectedUpcomingEvents.length > 0 && (
+              {upcomingEventSelectionMode && (
+                <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedEventIds, visibleUpcomingEvents, selectedEventIds)}>
+                  {visibleUpcomingEvents.length > 0 && visibleUpcomingEvents.every((event) => selectedEventIds.includes(event.id)) ? 'Clear selection' : 'Select visible'}
+                </button>
+              )}
+              {upcomingEventSelectionMode && selectedUpcomingEvents.length > 0 && (
                 <button className="action-button danger-button" onClick={() => onRequestBulkDelete('event', selectedUpcomingEvents)}>
                   <Trash2 size={14} /> Delete ({selectedUpcomingEvents.length})
                 </button>
@@ -326,6 +356,7 @@ export default function Dashboard({
                     key={e.id}
                     ev={e}
                     selected={selectedEventIds.includes(e.id)}
+                    selectionMode={upcomingEventSelectionMode}
                     onToggleSelect={(id) => toggleSelected(setSelectedEventIds, id)}
                     onView={(item) => onViewEvent(item)}
                     onRequestDelete={(item) => onRequestDelete({ type: 'event', item })}
@@ -346,11 +377,20 @@ export default function Dashboard({
               <button
                 className="bulk-select-all"
                 disabled={missed.length === 0}
-                onClick={() => toggleAllSelected(setSelectedMissedTaskIds, missed, selectedMissedTaskIds)}
+                aria-pressed={missedTaskSelectionMode}
+                onClick={() => {
+                  if (missedTaskSelectionMode) setSelectedMissedTaskIds([]);
+                  setMissedTaskSelectionMode((active) => !active);
+                }}
               >
-                {missed.length > 0 && missed.every((task) => selectedMissedTaskIds.includes(task.id)) ? 'Clear selection' : 'Select visible'}
+                {missedTaskSelectionMode ? 'Done' : 'Select items'}
               </button>
-              {selectedMissedTasks.length > 0 && (
+              {missedTaskSelectionMode && (
+                <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedMissedTaskIds, missed, selectedMissedTaskIds)}>
+                  {missed.length > 0 && missed.every((task) => selectedMissedTaskIds.includes(task.id)) ? 'Clear selection' : 'Select visible'}
+                </button>
+              )}
+              {missedTaskSelectionMode && selectedMissedTasks.length > 0 && (
                 <button className="action-button danger-button" onClick={() => onRequestBulkDelete('task', selectedMissedTasks)}>
                   <Trash2 size={14} /> Delete ({selectedMissedTasks.length})
                 </button>
@@ -368,6 +408,7 @@ export default function Dashboard({
                   showDate
                   startCollapsed
                   selected={selectedMissedTaskIds.includes(task.id)}
+                  selectionMode={missedTaskSelectionMode}
                   onToggleSelect={(id) => toggleSelected(setSelectedMissedTaskIds, id)}
                   {...lineProps}
                 />
@@ -393,10 +434,22 @@ export default function Dashboard({
           ) : (
             <>
               <div className="bulk-actions">
-                <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedEventIds, recentAll.slice(0, recLimit), selectedEventIds)}>
-                  {recentAll.slice(0, recLimit).every((item) => selectedEventIds.includes(item.id)) ? 'Clear selection' : 'Select visible'}
+                <button
+                  className="bulk-select-all"
+                  aria-pressed={recentEventSelectionMode}
+                  onClick={() => {
+                    if (recentEventSelectionMode) setSelectedEventIds([]);
+                    setRecentEventSelectionMode((active) => !active);
+                  }}
+                >
+                  {recentEventSelectionMode ? 'Done' : 'Select items'}
                 </button>
-                {recentAll.some((item) => selectedEventIds.includes(item.id)) && (
+                {recentEventSelectionMode && (
+                  <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedEventIds, recentAll.slice(0, recLimit), selectedEventIds)}>
+                    {recentAll.slice(0, recLimit).every((item) => selectedEventIds.includes(item.id)) ? 'Clear selection' : 'Select visible'}
+                  </button>
+                )}
+                {recentEventSelectionMode && recentAll.some((item) => selectedEventIds.includes(item.id)) && (
                   <button className="action-button danger-button" onClick={() => onRequestBulkDelete('event', recentAll.filter((item) => selectedEventIds.includes(item.id)))}>
                     <Trash2 size={14} /> Delete selected ({recentAll.filter((item) => selectedEventIds.includes(item.id)).length})
                   </button>
@@ -408,6 +461,7 @@ export default function Dashboard({
                     key={event.id}
                     ev={event}
                     selected={selectedEventIds.includes(event.id)}
+                    selectionMode={recentEventSelectionMode}
                     onToggleSelect={(id) => toggleSelected(setSelectedEventIds, id)}
                     onView={(item) => onViewEvent(item)}
                     onRequestDelete={(item) => onRequestDelete({ type: 'event', item })}
@@ -440,10 +494,22 @@ export default function Dashboard({
             ) : (
               <>
                 <div className="bulk-actions schedule-bulk-actions">
-                  <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedTaskIds, visibleScheduleTasks, selectedTaskIds)}>
-                    {visibleScheduleTasks.length > 0 && visibleScheduleTasks.every((item) => selectedTaskIds.includes(item.id)) ? 'Clear selection' : 'Select visible'}
+                  <button
+                    className="bulk-select-all"
+                    aria-pressed={scheduleSelectionMode}
+                    onClick={() => {
+                      if (scheduleSelectionMode) setSelectedTaskIds([]);
+                      setScheduleSelectionMode((active) => !active);
+                    }}
+                  >
+                    {scheduleSelectionMode ? 'Done' : 'Select items'}
                   </button>
-                  {visibleScheduleTasks.some((item) => selectedTaskIds.includes(item.id)) && (
+                  {scheduleSelectionMode && (
+                    <button className="bulk-select-all" onClick={() => toggleAllSelected(setSelectedTaskIds, visibleScheduleTasks, selectedTaskIds)}>
+                      {visibleScheduleTasks.length > 0 && visibleScheduleTasks.every((item) => selectedTaskIds.includes(item.id)) ? 'Clear selection' : 'Select visible'}
+                    </button>
+                  )}
+                  {scheduleSelectionMode && visibleScheduleTasks.some((item) => selectedTaskIds.includes(item.id)) && (
                     <button className="action-button danger-button" onClick={() => onRequestBulkDelete('task', visibleScheduleTasks.filter((item) => selectedTaskIds.includes(item.id)))}>
                       <Trash2 size={14} /> Delete selected ({visibleScheduleTasks.filter((item) => selectedTaskIds.includes(item.id)).length})
                     </button>
@@ -459,6 +525,7 @@ export default function Dashboard({
                           t={t}
                           {...lineProps}
                           selected={selectedTaskIds.includes(t.id)}
+                          selectionMode={scheduleSelectionMode}
                           onToggleSelect={(id) => toggleSelected(setSelectedTaskIds, id)}
                         />
                       ))}

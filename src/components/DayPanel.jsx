@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CalendarPlus, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { prettyDate, todayKey } from '../utils/dates';
 import { categoryTone } from '../utils/categoryTone';
 import EventForm from './EventForm';
@@ -14,6 +14,7 @@ export default function DayPanel({
 }) {
   const [editing, setEditing] = useState(null); // null | 'new' | event object
   const [selectedEventIds, setSelectedEventIds] = useState([]);
+  const [selectionMode, setSelectionMode] = useState(false);
   const [viewingEvent, setViewingEvent] = useState(null);
   const isPast = date < todayKey();
 
@@ -44,12 +45,28 @@ export default function DayPanel({
           <div className="day-card-actions">
             {calendarEvents.length > 0 && (
               <>
-                <button className="bulk-select-all" onClick={() => {
-                  const allSelected = calendarEvents.every((event) => selectedEventIds.includes(event.id));
-                  setSelectedEventIds(allSelected ? [] : calendarEvents.map((event) => event.id));
-                }}>
-                  {calendarEvents.every((event) => selectedEventIds.includes(event.id)) ? 'Clear selection' : 'Select all'}
+                <button
+                  className="bulk-select-all"
+                  aria-pressed={selectionMode}
+                  onClick={() => {
+                    if (selectionMode) setSelectedEventIds([]);
+                    setSelectionMode((active) => !active);
+                  }}
+                >
+                  {selectionMode ? 'Done' : 'Select items'}
                 </button>
+                {selectionMode && (
+                  <button
+                    className="bulk-select-all"
+                    aria-pressed={calendarEvents.every((event) => selectedEventIds.includes(event.id))}
+                    onClick={() => {
+                      const allSelected = calendarEvents.every((event) => selectedEventIds.includes(event.id));
+                      setSelectedEventIds(allSelected ? [] : calendarEvents.map((event) => event.id));
+                    }}
+                  >
+                    {calendarEvents.every((event) => selectedEventIds.includes(event.id)) ? 'Clear selection' : 'Select all'}
+                  </button>
+                )}
                 {calendarEvents.some((event) => selectedEventIds.includes(event.id)) && (
                   <button
                     className="action-button danger-button"
@@ -82,17 +99,24 @@ export default function DayPanel({
         {calendarEvents.length > 0 && (
           <div className="all-event-list">
             {calendarEvents.map((ev) => (
-              <article key={ev.id} className="calendar-event-item">
-                <input
-                  className="bulk-select"
-                  type="checkbox"
-                  checked={selectedEventIds.includes(ev.id)}
-                  aria-label={`Select event ${ev.title}`}
-                  onChange={() => setSelectedEventIds((current) =>
-                    current.includes(ev.id) ? current.filter((id) => id !== ev.id) : [...current, ev.id]
-                  )}
-                />
-                <button type="button" className="calendar-event-title" onClick={() => setViewingEvent(ev)}>
+              <article key={ev.id} className={`calendar-event-item ${selectedEventIds.includes(ev.id) ? 'is-selected' : ''}`}>
+                <button
+                  type="button"
+                  className="calendar-event-title"
+                  aria-pressed={selectionMode ? selectedEventIds.includes(ev.id) : undefined}
+                  aria-label={selectionMode
+                    ? `${selectedEventIds.includes(ev.id) ? 'Deselect' : 'Select'} event ${ev.title}`
+                    : `Open event ${ev.title}`}
+                  onClick={() => {
+                    if (selectionMode) {
+                      setSelectedEventIds((current) =>
+                        current.includes(ev.id) ? current.filter((id) => id !== ev.id) : [...current, ev.id]
+                      );
+                    } else {
+                      setViewingEvent(ev);
+                    }
+                  }}
+                >
                   {ev.title}
                 </button>
                 <span className={`tag category-tag tone-${categoryTone(ev.category)}`}>{ev.category}</span>
@@ -103,22 +127,19 @@ export default function DayPanel({
         )}
       </div>
 
-      <div className="card day-time-card">
-        <h3 className="time-plan-title"><CalendarPlus size={18} /> Time plan</h3>
-        <TaskPlanner
-          key={date}
-          date={date}
-          tasks={tasks}
-          templates={templates}
-          saveTask={saveTask}
-          saveTasks={saveTasks}
-          deleteTask={deleteTask}
-          onRequestBulkDelete={onRequestBulkDelete}
-          saveTemplate={saveTemplate}
-          deleteTemplate={deleteTemplate}
-          updateTemplate={updateTemplate}
-        />
-      </div>
+      <TaskPlanner
+        key={date}
+        date={date}
+        tasks={tasks}
+        templates={templates}
+        saveTask={saveTask}
+        saveTasks={saveTasks}
+        deleteTask={deleteTask}
+        onRequestBulkDelete={onRequestBulkDelete}
+        saveTemplate={saveTemplate}
+        deleteTemplate={deleteTemplate}
+        updateTemplate={updateTemplate}
+      />
       <DetailModal
         detail={viewingEvent ? { type: 'event', item: viewingEvent } : null}
         onClose={() => setViewingEvent(null)}
